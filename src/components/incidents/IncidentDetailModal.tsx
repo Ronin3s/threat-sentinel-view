@@ -2,10 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, Eye, AlertTriangle } from "lucide-react";
 import { Incident } from "./IncidentTable";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { IncidentTimeline } from "./IncidentTimeline";
+import { ProcessTree } from "./ProcessTree";
+import { mockIncidentTimeline, mockProcessTree } from "@/lib/mockData";
 
 interface IncidentDetailModalProps {
   incident: Incident | null;
@@ -46,9 +50,12 @@ export const IncidentDetailModal = ({ incident, open, onClose }: IncidentDetailM
     onClose();
   };
 
+  const timeline = mockIncidentTimeline[incident.id] || [];
+  const processTree = mockProcessTree[incident.id];
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-card border-border">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold text-foreground">
@@ -63,63 +70,91 @@ export const IncidentDetailModal = ({ incident, open, onClose }: IncidentDetailM
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="process">Process Tree</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Type</label>
+                <p className="text-foreground">{incident.type}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Source</label>
+                <p className="font-mono text-foreground">{incident.source}</p>
+              </div>
+            </div>
+
+            <Separator className="bg-border" />
+
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Type</label>
-              <p className="text-foreground">{incident.type}</p>
+              <label className="text-sm font-medium text-muted-foreground">Description</label>
+              <p className="text-foreground">{incident.description}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Source</label>
-              <p className="font-mono text-foreground">{incident.source}</p>
+
+            {incident.processName && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Process Name</label>
+                <p className="font-mono text-foreground">{incident.processName}</p>
+              </div>
+            )}
+
+            {incident.affectedFile && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Affected File</label>
+                <p className="font-mono text-sm text-foreground break-all">{incident.affectedFile}</p>
+              </div>
+            )}
+
+            {incident.analysis && (
+              <div className="rounded-lg bg-muted/50 p-4">
+                <label className="text-sm font-medium text-muted-foreground">Analysis</label>
+                <p className="mt-2 text-sm text-foreground">{incident.analysis}</p>
+              </div>
+            )}
+
+            <Separator className="bg-border" />
+
+            <div className="flex gap-2">
+              <Button onClick={handleAcknowledge} variant="outline" className="flex-1">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Acknowledge
+              </Button>
+              <Button onClick={handleInvestigate} variant="outline" className="flex-1">
+                <Eye className="mr-2 h-4 w-4" />
+                Investigate
+              </Button>
+              <Button onClick={handleResolve} className="flex-1 bg-success hover:bg-success/90">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Resolve
+              </Button>
             </div>
-          </div>
+          </TabsContent>
 
-          <Separator className="bg-border" />
+          <TabsContent value="timeline" className="mt-4">
+            {timeline.length > 0 ? (
+              <IncidentTimeline stages={timeline} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No timeline data available for this incident
+              </div>
+            )}
+          </TabsContent>
 
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Description</label>
-            <p className="text-foreground">{incident.description}</p>
-          </div>
-
-          {incident.processName && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Process Name</label>
-              <p className="font-mono text-foreground">{incident.processName}</p>
-            </div>
-          )}
-
-          {incident.affectedFile && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Affected File</label>
-              <p className="font-mono text-sm text-foreground break-all">{incident.affectedFile}</p>
-            </div>
-          )}
-
-          {incident.analysis && (
-            <div className="rounded-lg bg-muted/50 p-4">
-              <label className="text-sm font-medium text-muted-foreground">Analysis</label>
-              <p className="mt-2 text-sm text-foreground">{incident.analysis}</p>
-            </div>
-          )}
-
-          <Separator className="bg-border" />
-
-          <div className="flex gap-2">
-            <Button onClick={handleAcknowledge} variant="outline" className="flex-1">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Acknowledge
-            </Button>
-            <Button onClick={handleInvestigate} variant="outline" className="flex-1">
-              <Eye className="mr-2 h-4 w-4" />
-              Investigate
-            </Button>
-            <Button onClick={handleResolve} className="flex-1 bg-success hover:bg-success/90">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Resolve
-            </Button>
-          </div>
-        </div>
+          <TabsContent value="process" className="mt-4">
+            {processTree ? (
+              <ProcessTree rootProcess={processTree} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No process tree data available for this incident
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

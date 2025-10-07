@@ -3,10 +3,21 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { IncidentTable } from "@/components/incidents/IncidentTable";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Incident } from "@/components/incidents/IncidentTable";
 
 const Incidents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+
+  // Enable real-time notifications
+  useNotifications({
+    onIncidentClick: (incident) => {
+      setSelectedIncident(incident);
+    },
+    enabled: true,
+  });
 
   return (
     <div className="space-y-6">
@@ -39,7 +50,7 @@ const Incidents = () => {
         </Select>
       </div>
 
-      <IncidentTable />
+      <IncidentTable onIncidentSelect={setSelectedIncident} />
     </div>
   );
 };

@@ -1,6 +1,8 @@
-import { Home, AlertTriangle, Activity, Settings, FileText, Shield } from "lucide-react";
+import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -11,16 +13,28 @@ const navigation = [
 ];
 
 export const Sidebar = () => {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-sidebar-border bg-sidebar">
+    <aside 
+      className={cn(
+        "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}
+    >
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <Shield className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">SecureWatch</h1>
-            <p className="text-xs text-muted-foreground">SOC Dashboard</p>
-          </div>
+        <div className={cn(
+          "flex h-16 items-center border-b border-sidebar-border transition-all",
+          collapsed ? "justify-center px-2" : "gap-2 px-6"
+        )}>
+          <Shield className="h-8 w-8 text-primary flex-shrink-0" />
+          {!collapsed && (
+            <div>
+              <h1 className="text-lg font-bold text-sidebar-foreground">SecureWatch</h1>
+              <p className="text-xs text-muted-foreground">SOC Dashboard</p>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -32,25 +46,48 @@ export const Sidebar = () => {
               end={item.href === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  collapsed ? "justify-center" : "gap-3",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )
               }
+              title={collapsed ? item.name : undefined}
             >
-              <item.icon className="h-5 w-5" />
-              {item.name}
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              {!collapsed && item.name}
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent px-3 py-2">
-            <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span className="text-xs text-sidebar-foreground">System Active</span>
-          </div>
+        <div className="border-t border-sidebar-border p-4 space-y-2">
+          {!collapsed && (
+            <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent px-3 py-2">
+              <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span className="text-xs text-sidebar-foreground">System Active</span>
+            </div>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn(
+              "w-full hover:bg-sidebar-accent",
+              collapsed && "px-2"
+            )}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <>
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Collapse
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </aside>
