@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { IncidentTimeline } from "./IncidentTimeline";
 import { ProcessTree } from "./ProcessTree";
+import { KillChainVisualizer } from "./KillChainVisualizer";
 import { mockIncidentTimeline, mockProcessTree } from "@/lib/mockData";
+import { getIncidentKillChain } from "@/api/apiClient";
 
 interface IncidentDetailModalProps {
   incident: Incident | null;
@@ -18,6 +21,14 @@ interface IncidentDetailModalProps {
 }
 
 export const IncidentDetailModal = ({ incident, open, onClose }: IncidentDetailModalProps) => {
+  const [killChainData, setKillChainData] = useState<any>(null);
+
+  useEffect(() => {
+    if (incident && open) {
+      getIncidentKillChain(incident.id).then(setKillChainData);
+    }
+  }, [incident, open]);
+
   if (!incident) return null;
 
   const getSeverityColor = (severity: string) => {
@@ -71,9 +82,10 @@ export const IncidentDetailModal = ({ incident, open, onClose }: IncidentDetailM
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="killchain">Kill Chain</TabsTrigger>
             <TabsTrigger value="process">Process Tree</TabsTrigger>
           </TabsList>
 
@@ -141,6 +153,16 @@ export const IncidentDetailModal = ({ incident, open, onClose }: IncidentDetailM
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 No timeline data available for this incident
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="killchain" className="mt-4">
+            {killChainData ? (
+              <KillChainVisualizer stages={killChainData.stages} />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading kill chain analysis...
               </div>
             )}
           </TabsContent>

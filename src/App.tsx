@@ -12,9 +12,14 @@ import { Button } from "@/components/ui/button";
 import { History } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import Incidents from "./pages/Incidents";
+import HostScan from "./pages/HostScan";
+import BehaviorMonitor from "./pages/BehaviorMonitor";
+import IOCHunt from "./pages/IOCHunt";
+import Playbooks from "./pages/Playbooks";
 import Monitoring from "./pages/Monitoring";
 import Rules from "./pages/Rules";
 import Reports from "./pages/Reports";
+import AutoReports from "./pages/AutoReports";
 import NotFound from "./pages/NotFound";
 import { mockUserActions } from "@/lib/mockData";
 
@@ -50,9 +55,14 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/incidents" element={<Incidents />} />
+                  <Route path="/host-scan" element={<HostScan />} />
+                  <Route path="/behavior-monitor" element={<BehaviorMonitor />} />
+                  <Route path="/ioc-hunt" element={<IOCHunt />} />
+                  <Route path="/playbooks" element={<Playbooks />} />
                   <Route path="/monitoring" element={<Monitoring />} />
                   <Route path="/rules" element={<Rules />} />
                   <Route path="/reports" element={<Reports />} />
+                  <Route path="/auto-reports" element={<AutoReports />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

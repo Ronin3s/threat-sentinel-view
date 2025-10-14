@@ -1,4 +1,4 @@
-import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,14 @@ import { useState } from "react";
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Incidents", href: "/incidents", icon: AlertTriangle },
+  { name: "Host Scan", href: "/host-scan", icon: Shield },
+  { name: "Behavior Monitor", href: "/behavior-monitor", icon: Activity },
+  { name: "IOC Hunt", href: "/ioc-hunt", icon: Search },
+  { name: "Playbooks", href: "/playbooks", icon: FileText },
   { name: "Monitoring", href: "/monitoring", icon: Activity },
   { name: "Rules", href: "/rules", icon: Settings },
   { name: "Reports", href: "/reports", icon: FileText },
+  { name: "Auto Reports", href: "/auto-reports", icon: FileText },
 ];
 
 export const Sidebar = () => {
