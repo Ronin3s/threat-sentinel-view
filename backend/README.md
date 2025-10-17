@@ -5,20 +5,23 @@ This is a simulated backend server for the SecureWatch Pro dashboard. It provide
 ## Setup
 
 ```bash
-npm install express cors
+cd backend
+npm install
 ```
 
 ## Running the Server
 
 ```bash
-node backend/server.js
+npm start
+# or for development with auto-reload
+npm run dev
 ```
 
 The server will run on `http://localhost:4000`
 
 ## Available Endpoints
 
-### Scan Routes
+### Scan Routes (`/api/scan`)
 
 - **POST** `/api/scan/start` - Initiate a new host scan
   - Body: `{ "hostId": "WIN-SRV-01" }`
@@ -26,6 +29,17 @@ The server will run on `http://localhost:4000`
 
 - **GET** `/api/scan/results` - Get scan results
   - Response: Array of file scan results with status, hash, and metadata
+
+### Process Monitor Routes (`/api/monitor`)
+
+- **GET** `/api/monitor/processes` - Get all running processes
+  - Response: `{ "processes": [...], "summary": { "total": 8, "highRisk": 2, "systemLoad": 65 } }`
+
+- **POST** `/api/monitor/kill/:pid` - Terminate a process
+  - Response: `{ "message": "Process terminated", "status": "success", "pid": 1234 }`
+
+- **GET** `/api/monitor/metrics` - Get CPU and Memory usage over time
+  - Response: `{ "cpu": [...], "memory": [...] }`
 
 ## Integration with Python Agent
 
@@ -35,7 +49,7 @@ For production use, replace these mock endpoints with calls to a Python agent:
 # Python Agent (Future Implementation)
 # Run on localhost:5001
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import psutil
 import hashlib
 import os
@@ -48,16 +62,60 @@ def start_scan():
     # Use psutil, hashlib for integrity checks
     return jsonify({"status": "scanning", "jobId": "xxx"})
 
-@app.route('/results/<job_id>', methods=['GET'])
-def get_results(job_id):
-    # Return real scan results
-    return jsonify(results)
+@app.route('/get_processes', methods=['GET'])
+def get_processes():
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+        try:
+            pinfo = proc.info
+            processes.append({
+                'pid': pinfo['pid'],
+                'name': pinfo['name'],
+                'cpu': pinfo['cpu_percent'],
+                'mem': pinfo['memory_info'].rss / (1024 * 1024),  # Convert to MB
+                'risk': assess_risk(pinfo),  # Custom risk assessment
+                'status': 'Running'
+            })
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    return jsonify({'processes': processes})
+
+@app.route('/kill_process/<int:pid>', methods=['POST'])
+def kill_process(pid):
+    try:
+        p = psutil.Process(pid)
+        p.terminate()
+        return jsonify({"status": "success", "pid": pid})
+    except psutil.NoSuchProcess:
+        return jsonify({"status": "error", "message": "Process not found"}), 404
+
+def assess_risk(proc_info):
+    # Implement risk assessment logic
+    # Check against known suspicious processes, behaviors, etc.
+    suspicious_names = ['powershell.exe', 'cmd.exe', 'rundll32.exe']
+    if proc_info['name'] in suspicious_names:
+        return 'High'
+    elif proc_info['cpu_percent'] > 50:
+        return 'Medium'
+    return 'Low'
+
+if __name__ == '__main__':
+    app.run(port=5001)
 ```
+
+## Frontend Integration
+
+The frontend connects to these endpoints via `http://localhost:4000`. To connect to a real Python agent:
+
+1. Update backend routes to proxy requests to Python agent
+2. Or update frontend API calls to point directly to `http://localhost:5001`
+3. Implement proper error handling and authentication
 
 ## Next Steps
 
 1. Implement Python agent with real system scanning capabilities
-2. Replace mock data in `/backend/mock/scanResults.json` with live data
-3. Add authentication and authorization
-4. Implement WebSocket for real-time updates
-5. Add database integration for persistent storage
+2. Add WebSocket support for real-time process monitoring
+3. Implement authentication and authorization
+4. Add database integration for persistent storage
+5. Add logging and monitoring for the backend itself
+6. Implement rate limiting and security measures

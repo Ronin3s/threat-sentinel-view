@@ -1,4 +1,4 @@
-import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight, Search, Cpu } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Incidents", href: "/incidents", icon: AlertTriangle },
   { name: "Host Scan", href: "/host-scan", icon: Shield },
+  { name: "Process Monitor", href: "/process-monitor", icon: Cpu },
   { name: "Behavior Monitor", href: "/behavior-monitor", icon: Activity },
   { name: "IOC Hunt", href: "/ioc-hunt", icon: Search },
   { name: "Playbooks", href: "/playbooks", icon: FileText },

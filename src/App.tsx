@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Incidents from "./pages/Incidents";
 import HostScan from "./pages/HostScan";
 import BehaviorMonitor from "./pages/BehaviorMonitor";
+import ProcessMonitor from "./pages/ProcessMonitor";
 import IOCHunt from "./pages/IOCHunt";
 import Playbooks from "./pages/Playbooks";
 import Monitoring from "./pages/Monitoring";
@@ -56,6 +57,7 @@ const App = () => {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/incidents" element={<Incidents />} />
                   <Route path="/host-scan" element={<HostScan />} />
+                  <Route path="/process-monitor" element={<ProcessMonitor />} />
                   <Route path="/behavior-monitor" element={<BehaviorMonitor />} />
                   <Route path="/ioc-hunt" element={<IOCHunt />} />
                   <Route path="/playbooks" element={<Playbooks />} />
