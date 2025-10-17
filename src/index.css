@@ -68,6 +68,14 @@ All colors MUST be HSL.
     --chart-3: 38 92% 50%;
     --chart-4: 0 84% 60%;
     --chart-5: 280 70% 60%;
+
+    /* Enhanced shadows for glassmorphism */
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(66, 153, 225, 0.2);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
+    
+    /* Blur effects */
+    --blur-glass: blur(8px);
   }
 
   .dark {
@@ -122,6 +130,14 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 47% 12%;
     --sidebar-ring: 217 91% 60%;
+
+    /* Enhanced shadows for glassmorphism (dark) */
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25);
+    
+    /* Blur effects */
+    --blur-glass: blur(8px);
   }
 }
 
