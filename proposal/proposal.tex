@@ -8,43 +8,50 @@
 \usepackage{hyperref}   % For hyperlinks
 \usepackage{titlesec}   % For customizing section titles
 \usepackage{times}      % Use Times New Roman font
+\usepackage{xcolor}     % For colored rules
 
 % ===================== Page Setup =====================
-\geometry{top=2cm, bottom=2cm, left=2.5cm, right=2.5cm}
+\geometry{top=2.2cm, bottom=2.2cm, left=2.5cm, right=2.5cm}
 \setstretch{1.3}
 
 \titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.5em}{}
 
-% ===================== Header & Footer =====================
-% \pagestyle{fancy}
-% \fancyhf{}
-% \fancyhead[L]{\textbf{SIREN – Smart Incident Response \& Event Notifier}}
-% \fancyhead[R]{Ahmed Reda Ismail}
-% \fancyfoot[C]{\thepage}
-
+% ===================== Document Start =====================
 \begin{document}
 
+% ===================== Header Section =====================
 \begin{center}
-	{\Large \textbf{Draft Project Proposal}} \\[0.3cm]
-	{\large \textbf{Student Name:} Ahmed Reda Ismail} \\[0.1cm]
-	{\large \textbf{Project Title:} SIREN – Smart Incident Response \& Event Notifier} \\[0.3cm]
-	\hrule
+	% {\Large \textbf{Draft Project Proposal}} \\[0.4cm]
+
+	\begin{tabular}{rl}
+		{\large \textbf{Project Title:}      & SIREN – Smart Incident Response \& Event Notifier } \\
+		{\large \textbf{Student Name:}       & Ahmed Reda Ismail                                 } \\
+		{\large \textbf{Student Number:}     & 22511231                                          } \\
+		{\large \textbf{Supervisor:}         & Dr.\ Mona Abbas                                   } \\
+		{\large \textbf{Date of Submission:} & 22/10/2025                                        } \\
+	\end{tabular}
+
+	\vspace{0.5cm}
 \end{center}
 
+% \vspace{0.5em}
+% ===================== Content =====================
+
+\hrule
 \section*{Initial Description of the Problem}
 
 In modern organizations, the number of cybersecurity incidents is growing rapidly due to the increasing complexity of networks and the evolving sophistication of attacks. Security teams (SOC Analysts) often struggle to detect, analyze, and respond to incidents in real-time, leading to data breaches, downtime, and financial losses.
 
-Most existing monitoring tools are either too complex, too expensive, or lack automated response mechanisms. Manual handling of incidents results in slower reaction times, inconsistent responses, and incomplete investigations significantly increasing the risk of prolonged compromise.Therefore, there is a critical need for a system that can
-\textbf{automate the detection and response process} to ensure faster containment and minimize human error.
+Most existing monitoring tools are either too complex, too expensive, or lack automated response mechanisms. Manual handling of incidents results in slower reaction times, inconsistent responses, and incomplete investigations significantly increasing the risk of prolonged compromise. Therefore, there is a critical need for a system that can \textbf{automate the detection and response process} to ensure faster containment and minimize human error.
 
 \vspace{0.5em}
+% \color{gray}\rule{\textwidth}{0.6pt}
+
 \hrule
-% \vspace{0.5em}
 
 \section*{Initial Description of the Suggested Solution}
 
-The proposed solution, \textbf{SIREN (Smart Incident Response \& Event Notifier)}, is an intelligent and semi-automated incident response platform designed to enhance the efficiency and accuracy of cybersecurity teams. It aims to automate key stages of the \textbf{Incident Handling Process} {Preparation, Detection, Containment, and Post-Incident Activity}.
+The proposed solution, \textbf{SIREN (Smart Incident Response \& Event Notifier)}, is an intelligent and semi-automated incident response platform designed to enhance the efficiency and accuracy of cybersecurity teams. It aims to automate key stages of the \textbf{Incident Handling Process} — Preparation, Detection, Containment, and Post-Incident Activity.
 
 The system will be composed of the following major components:
 
@@ -54,13 +61,12 @@ The system will be composed of the following major components:
 	\item \textbf{Python Agent (Windows-based):} Responsible for interacting directly with the system scanning files, monitoring processes, and executing automated containment actions.
 \end{itemize}
 
-% \vspace{0.5em}
-
 \noindent
 The goal of SIREN is to simulate an automated \textbf{Security Operations Center (SOC)} that can quickly identify, analyze, and mitigate security incidents with minimal human intervention.
 
 \vspace{0.5em}
 \newpage
+
 \section*{Key Features}
 
 \begin{enumerate}
@@ -73,10 +79,9 @@ The goal of SIREN is to simulate an automated \textbf{Security Operations Center
 \end{enumerate}
 
 \vspace{0.5em}
+% \color{gray}\rule{\textwidth}{0.6pt}
 \hrule
-
 \section*{Expected Outcome}
-
 
 By integrating automation with the incident response lifecycle, \textbf{SIREN} will:
 \begin{itemize}
@@ -87,18 +92,14 @@ By integrating automation with the incident response lifecycle, \textbf{SIREN} w
 \end{itemize}
 
 \vspace{0.5em}
+% \color{gray}\rule{\textwidth}{0.6pt}
 \hrule
-
 \section*{Conclusion}
 
-\textbf{SIREN} bridges the gap between traditional manual SOC operations and modern automated cyber defense.
-It combines responsive UI design, real-time backend communication, and intelligent automation to create a comprehensive incident response and monitoring environment suitable for both learning and real-world simulation.
+\textbf{SIREN} bridges the gap between traditional manual SOC operations and modern automated cyber defense. It combines responsive UI design, real-time backend communication, and intelligent automation to create a comprehensive incident response and monitoring environment suitable for both learning and real-world simulation.
 
-% \vspace{1em}
-% \hrule
-% \vspace{0.5em}
-% \noindent
-% \textbf{Submission Type:} Draft Project Proposal for Tutor Review
-%
+\vspace{1em}
+% \color{gray}\rule{\textwidth}{0.6pt}
+
 \end{document}
 

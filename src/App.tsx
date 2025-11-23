@@ -23,6 +23,7 @@ import Reports from "./pages/Reports";
 import AutoReports from "./pages/AutoReports";
 import NotFound from "./pages/NotFound";
 import { mockUserActions } from "@/lib/mockData";
+import BackendStatus from "./pages/BackendStatus";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => {
                   <Route path="/rules" element={<Rules />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/auto-reports" element={<AutoReports />} />
+                  <Route path="/backend-status" element={<BackendStatus />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

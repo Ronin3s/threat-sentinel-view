@@ -1,4 +1,4 @@
-import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight, Search, Cpu } from "lucide-react";
+import { Home, AlertTriangle, Activity, Settings, FileText, Shield, ChevronLeft, ChevronRight, Search, Cpu, Server } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,14 @@ const navigation = [
   { name: "Rules", href: "/rules", icon: Settings },
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "Auto Reports", href: "/auto-reports", icon: FileText },
+  { name: "Backend Status", href: "/backend-status", icon: Server },
 ];
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside 
+    <aside
       className={cn(
         "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
         collapsed ? "w-16" : "w-64"
@@ -75,7 +76,7 @@ export const Sidebar = () => {
               <span className="text-xs text-sidebar-foreground">System Active</span>
             </div>
           )}
-          
+
           <Button
             variant="ghost"
             size="sm"
