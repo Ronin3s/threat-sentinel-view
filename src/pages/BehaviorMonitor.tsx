@@ -1,112 +1,174 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, Skull, Trash2, Download, GitBranch } from "lucide-react";
-import { useBehaviorStream } from "@/hooks/useBehaviorStream";
-import { killProcess, collectEvidence, isolateHost } from "@/api/apiClient";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ProcessTree } from "@/components/incidents/ProcessTree";
-import { mockProcessTree } from "@/lib/mockData";
+  Activity,
+  AlertTriangle,
+  RefreshCw,
+  Shield,
+  Play,
+  Trash2
+} from 'lucide-react';
+import { toast } from 'sonner';
+import sirenApi, { BehaviorEvent } from '@/lib/api';
 
 export default function BehaviorMonitor() {
-  const { events, isConnected, clearEvents } = useBehaviorStream();
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState<BehaviorEvent[]>([]);
+  const [stats, setStats] = useState({
+    total_events: 0,
+    by_severity: { low: 0, medium: 0, high: 0 },
+    unique_hosts: 0,
+    unique_processes: 0,
+  });
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleKillProcess = async (host: string, pid: number) => {
+  const loadEvents = async () => {
+    setLoading(true);
     try {
-      await killProcess(host, pid);
-      toast.success(`Process ${pid} terminated on ${host}`);
+      const data = await sirenApi.behavior.getEvents(50);
+      setEvents(data.events || []);
+      toast.success(`Loaded ${data.count} events`);
     } catch (error) {
-      toast.error("Failed to kill process");
+      console.error('Failed to load events:', error);
+      toast.error('Failed to load behavioral events');
+      setEvents([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCollectEvidence = async (host: string) => {
+  const loadStatistics = async () => {
     try {
-      const result = await collectEvidence(host, "memory_dump");
-      toast.success(`Evidence collected: ${result.evidence_id}`);
+      const data = await sirenApi.behavior.getStatistics();
+      setStats(data);
     } catch (error) {
-      toast.error("Failed to collect evidence");
+      console.error('Failed to load statistics:', error);
     }
   };
 
-  const handleIsolateHost = async (host: string) => {
+  const simulateEvents = async () => {
+    setRefreshing(true);
     try {
-      await isolateHost(host);
-      toast.success(`Host ${host} isolated from network`);
+      await sirenApi.behavior.simulateEvents(10);
+      toast.success('Generated 10 test events');
+      await loadEvents();
+      await loadStatistics();
     } catch (error) {
-      toast.error("Failed to isolate host");
+      console.error('Failed to simulate events:', error);
+      toast.error('Failed to generate test events');
+    } finally {
+      setRefreshing(false);
     }
   };
+
+  const clearEvents = async () => {
+    try {
+      await sirenApi.behavior.clearEvents();
+      toast.success('All events cleared');
+      setEvents([]);
+      await loadStatistics();
+    } catch (error) {
+      console.error('Failed to clear events:', error);
+      toast.error('Failed to clear events');
+    }
+  };
+
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([loadEvents(), loadStatistics()]);
+      toast.success('Data refreshed');
+    } catch (error) {
+      console.error('Failed to refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(() => {
+      if (!loading && !refreshing) {
+        loadStatistics();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [loading, refreshing]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case "high":
-        return "bg-critical text-critical-foreground";
-      case "medium":
-        return "bg-warning text-warning-foreground";
-      case "low":
-        return "bg-info text-info-foreground";
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
       default:
-        return "";
+        return 'text-green-500';
     }
   };
 
-  const getConfidenceColor = (confidence: string) => {
-    switch (confidence) {
-      case "high":
-        return "border-critical/50 bg-critical/20 text-critical";
-      case "medium":
-        return "border-warning/50 bg-warning/20 text-warning";
+  const getSeverityBadge = (severity: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (severity) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'secondary';
       default:
-        return "border-muted bg-muted/20";
+        return 'outline';
     }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Runtime Behavioral Monitor</h1>
-        <p className="text-muted-foreground">
-          Real-time monitoring of suspicious process behaviors and system activities
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Behavior Monitor</h1>
+          <p className="text-muted-foreground">Real-time behavioral anomaly detection</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={loadEvents}
+            disabled={loading}
+            variant="default"
+            className="gap-2"
+          >
+            <Play className="h-4 w-4" />
+            Load Events
+          </Button>
+          <Button
+            onClick={simulateEvents}
+            disabled={refreshing}
+            variant="outline"
+            className="gap-2"
+          >
+            <Activity className="h-4 w-4" />
+            Simulate Events
+          </Button>
+          <Button
+            onClick={refreshData}
+            disabled={refreshing}
+            variant="outline"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            onClick={clearEvents}
+            variant="destructive"
+            size="icon"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Connection Status */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Telemetry Stream</CardTitle>
-              <CardDescription>Live behavioral events from monitored endpoints</CardDescription>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className={cn("h-2 w-2 rounded-full", isConnected ? "bg-success animate-pulse" : "bg-muted")}>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {isConnected ? "Connected" : "Disconnected"}
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={clearEvents}>
-                Clear Events
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Event Stats */}
+      {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -114,29 +176,18 @@ export default function BehaviorMonitor() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{events.length}</div>
+            <div className="text-2xl font-bold">{stats.total_events}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">High Severity</CardTitle>
-            <Skull className="h-4 w-4 text-critical" />
+            <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-critical">
-              {events.filter(e => e.severity === "high").length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Medium Severity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              {events.filter(e => e.severity === "medium").length}
+            <div className="text-2xl font-bold text-red-500">
+              {stats.by_severity.high}
             </div>
           </CardContent>
         </Card>
@@ -144,122 +195,105 @@ export default function BehaviorMonitor() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unique Hosts</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Set(events.map(e => e.host)).size}
-            </div>
+            <div className="text-2xl font-bold">{stats.unique_hosts}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Unique Processes</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.unique_processes}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Behavior Events Table */}
+      {/* Events Table */}
       <Card>
         <CardHeader>
           <CardTitle>Behavioral Events</CardTitle>
-          <CardDescription>Real-time feed of suspicious process activities</CardDescription>
+          <CardDescription>
+            {events.length > 0
+              ? `Showing ${events.length} recent events`
+              : 'Click "Load Events" to fetch data'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Host</TableHead>
-                  <TableHead>Process</TableHead>
-                  <TableHead>PID</TableHead>
-                  <TableHead>Behaviors</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Confidence</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : events.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Shield className="h-16 w-16 mb-4 opacity-20" />
+              <p className="text-lg font-medium">No events loaded</p>
+              <p className="text-sm">Click "Load Events" or "Simulate Events" to see data</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      Waiting for behavioral events...
-                    </TableCell>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Host</TableHead>
+                    <TableHead>Process</TableHead>
+                    <TableHead>PID</TableHead>
+                    <TableHead>Behaviors</TableHead>
+                    <TableHead>Severity</TableHead>
+                    <TableHead>Confidence</TableHead>
                   </TableRow>
-                ) : (
-                  events.slice(0, 50).map((event) => (
-                    <TableRow key={event.event_id}>
-                      <TableCell className="text-xs">
-                        {new Date(event.timestamp).toLocaleTimeString()}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{event.host}</TableCell>
-                      <TableCell className="font-mono text-sm">{event.process}</TableCell>
-                      <TableCell className="font-mono text-sm">{event.pid}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {event.behavior.map((b: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {b.replace(/_/g, " ")}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn("font-medium", getSeverityColor(event.severity))}>
-                          {event.severity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn("font-medium", getConfidenceColor(event.confidence))}>
-                          {event.confidence}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedEvent(event)}
-                            title="View Process Tree"
-                          >
-                            <GitBranch className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleKillProcess(event.host, event.pid)}
-                            title="Kill Process"
-                          >
-                            <Trash2 className="h-4 w-4 text-critical" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCollectEvidence(event.host)}
-                            title="Collect Evidence"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  <AnimatePresence>
+                    {events.map((event) => (
+                      <motion.tr
+                        key={event.event_id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="border-b"
+                      >
+                        <TableCell className="font-mono text-xs">
+                          {new Date(event.timestamp).toLocaleTimeString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{event.host}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{event.process}</TableCell>
+                        <TableCell className="font-mono text-sm">{event.pid}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {event.behavior.map((b, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {b.replace(/_/g, ' ')}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getSeverityBadge(event.severity)}>
+                            <span className={getSeverityColor(event.severity)}>
+                              {event.severity.toUpperCase()}
+                            </span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{event.confidence}</Badge>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Process Tree Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Process Tree</DialogTitle>
-            <DialogDescription>
-              Process hierarchy for {selectedEvent?.process} (PID: {selectedEvent?.pid})
-            </DialogDescription>
-          </DialogHeader>
-          {selectedEvent && (
-            <ProcessTree rootProcess={mockProcessTree["INC-001"]} />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

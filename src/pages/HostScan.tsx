@@ -1,312 +1,299 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
-import { Loader2, Search, Shield, AlertTriangle, Download, CheckCircle2, FileSearch } from "lucide-react";
-import { startHostScan, getScanJob, ScanJob } from "@/api/apiClient";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Search,
+  Shield,
+  AlertTriangle,
+  FileSearch,
+  CheckCircle,
+  RefreshCw,
+  Play
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
+import sirenApi, { ScanJob } from '@/lib/api';
 
 export default function HostScan() {
-  const [hostId, setHostId] = useState("WIN-SRV-01");
+  const [hostId, setHostId] = useState('WIN-SRV-01');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanJob | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
 
-  const handleStartScan = async () => {
+  const startScan = async () => {
+    if (!hostId.trim()) {
+      toast.error('Please enter a host ID');
+      return;
+    }
+
     setScanning(true);
     setScanResult(null);
-    
+    setJobId(null);
+
     try {
-      const { jobId } = await startHostScan(hostId);
-      toast.info(`Scan started: ${jobId}`);
-      
-      // Poll for scan results
-      setTimeout(async () => {
-        const result = await getScanJob(jobId);
-        setScanResult(result);
-        setScanning(false);
-        
-        if (result.severity === "high") {
-          toast.error("High severity changes detected!");
-        } else {
-          toast.success("Scan completed successfully");
-        }
-      }, 3000);
+      const result = await sirenApi.integrity.startScan(hostId);
+      setJobId(result.job_id);
+      toast.success(`Scan started for ${hostId}`);
+
+      // Poll for results
+      pollScanResults(result.job_id);
     } catch (error) {
-      toast.error("Failed to start scan");
+      console.error('Failed to start scan:', error);
+      toast.error('Failed to start scan');
       setScanning(false);
     }
   };
 
+  const pollScanResults = async (scanJobId: string) => {
+    const maxAttempts = 20; // 20 seconds max
+    let attempts = 0;
+
+    const poll = setInterval(async () => {
+      attempts++;
+
+      try {
+        const result = await sirenApi.integrity.getScanResults(scanJobId);
+
+        if (result.status === 'completed' || result.status === 'failed') {
+          clearInterval(poll);
+          setScanResult(result);
+          setScanning(false);
+
+          if (result.status === 'completed') {
+            toast.success(`Scan completed! Found ${result.changes?.length || 0} changes`);
+          } else {
+            toast.error('Scan failed');
+          }
+        }
+
+        if (attempts >= maxAttempts) {
+          clearInterval(poll);
+          setScanning(false);
+          toast.warning('Scan is taking longer than expected. Check results manually.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch scan results:', error);
+        clearInterval(poll);
+        setScanning(false);
+      }
+    }, 1000);
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case "high":
-        return "bg-critical text-critical-foreground";
-      case "medium":
-        return "bg-warning text-warning-foreground";
-      case "low":
-        return "bg-info text-info-foreground";
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
       default:
-        return "bg-muted";
+        return 'text-green-500';
+    }
+  };
+
+  const getSeverityBadge = (severity: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (severity) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'secondary';
+      default:
+        return 'outline';
     }
   };
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
-          <FileSearch className="h-8 w-8 text-primary" />
-          Host Scan & Baseline Integrity
-        </h1>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Host Integrity Scanner</h1>
         <p className="text-muted-foreground">
-          Scan hosts for baseline deviations, file changes, and suspicious modifications
+          Scan hosts for file changes and baseline deviations
         </p>
-      </motion.div>
+      </div>
 
-      {/* Scan Control */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-      >
-        <Card className="border-primary/20 shadow-lg backdrop-blur-sm bg-card/95">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Start Host Scan
-            </CardTitle>
-            <CardDescription>Enter a hostname or IP address to scan for integrity changes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-4">
-              <Input
-                placeholder="Enter host ID (e.g., WIN-SRV-01)"
-                value={hostId}
-                onChange={(e) => setHostId(e.target.value)}
-                className="flex-1 border-muted-foreground/20 focus:border-primary transition-colors"
-                disabled={scanning}
-              />
-              <Button 
-                onClick={handleStartScan} 
-                disabled={scanning || !hostId}
-                size="lg"
-                className="min-w-[180px] transition-all hover:shadow-lg hover:shadow-primary/20"
-              >
-                {scanning ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-5 w-5" />
-                    Start Full Scan
-                  </>
-                )}
-              </Button>
+      {/* Scan Input */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Start Integrity Scan</CardTitle>
+          <CardDescription>
+            Enter a host ID to scan for file integrity changes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter host ID (e.g., WIN-SRV-01)"
+              value={hostId}
+              onChange={(e) => setHostId(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && startScan()}
+              disabled={scanning}
+              className="flex-1"
+            />
+            <Button
+              onClick={startScan}
+              disabled={scanning}
+              className="gap-2"
+            >
+              {scanning ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Start Scan
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scanning Indicator */}
+      {scanning && !scanResult && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center py-8">
+              <RefreshCw className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-lg font-medium">Scanning {hostId}...</p>
+              <p className="text-sm text-muted-foreground">
+                Job ID: {jobId}
+              </p>
             </div>
-            {scanning && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="space-y-2"
-              >
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Scanning system files...</span>
-                  <span className="text-primary font-medium">In Progress</span>
-                </div>
-                <Progress value={65} className="h-2" indicatorClassName="bg-gradient-to-r from-primary to-purple-600" />
-              </motion.div>
-            )}
           </CardContent>
         </Card>
-      </motion.div>
+      )}
 
-      {/* Scan Summary */}
-      <AnimatePresence>
-        {scanResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-6"
-          >
-            <div className="grid gap-4 md:grid-cols-3">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Card className="border-primary/20 shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm bg-card/95">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Baseline Match</CardTitle>
-                    <Shield className="h-5 w-5 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                      {scanResult.baseline_score}%
-                    </div>
-                    <Progress 
-                      value={scanResult.baseline_score} 
-                      className="mt-3 h-2" 
-                      indicatorClassName={cn(
-                        "transition-all",
-                        scanResult.baseline_score > 90 ? "bg-green-500" : 
-                        scanResult.baseline_score > 70 ? "bg-yellow-500" : "bg-red-500"
-                      )}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      {scanResult.baseline_score > 90 ? (
-                        <>
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          Excellent integrity
-                        </>
-                      ) : scanResult.baseline_score > 70 ? (
-                        <>
-                          <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                          Good integrity
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="h-3 w-3 text-red-500" />
-                          Poor integrity
-                        </>
-                      )}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+      {/* Scan Results */}
+      {scanResult && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Summary */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Baseline Score</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {scanResult.baseline_score || 0}/100
+                </div>
+              </CardContent>
+            </Card>
 
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card className="border-warning/20 shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm bg-card/95">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Changes Detected</CardTitle>
-                    <AlertTriangle className="h-5 w-5 text-warning" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-warning">{scanResult.changes.length}</div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Files, registry keys, and services
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Files Scanned</CardTitle>
+                <FileSearch className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {scanResult.files_scanned || 0}
+                </div>
+              </CardContent>
+            </Card>
 
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Card className={cn(
-                  "shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm bg-card/95",
-                  scanResult.severity === "high" ? "border-critical/20" : "border-warning/20"
-                )}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Overall Severity</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Badge className={cn("text-sm px-3 py-1", getSeverityColor(scanResult.severity))}>
-                      {scanResult.severity.toUpperCase()}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-3">
-                      Last scan: {new Date(scanResult.timestamp).toLocaleString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Changes Detected</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {scanResult.changes?.length || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Severity</CardTitle>
+                <CheckCircle className={`h-4 w-4 ${getSeverityColor(scanResult.severity || 'low')}`} />
+              </CardHeader>
+              <CardContent>
+                <Badge variant={getSeverityBadge(scanResult.severity || 'low')}>
+                  {(scanResult.severity || 'low').toUpperCase()}
+                </Badge>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Changes List */}
+          {scanResult.changes && scanResult.changes.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Detected Changes</CardTitle>
+                <CardDescription>
+                  {scanResult.changes.length} changes found on {scanResult.host}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {scanResult.changes.map((change, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {change.change}
+                          </Badge>
+                          <Badge variant={getSeverityBadge(change.severity)}>
+                            {change.severity}
+                          </Badge>
+                        </div>
+                        <p className="font-mono text-sm">{change.path}</p>
+                        {change.hash && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Hash: {change.hash}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center justify-center py-8 text-green-500">
+                  <CheckCircle className="h-16 w-16 mb-4" />
+                  <p className="text-lg font-medium">No Changes Detected</p>
+                  <p className="text-sm text-muted-foreground">
+                    Host {scanResult.host} matches baseline
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
+      )}
+
+      {/* Empty State */}
+      {!scanning && !scanResult && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Search className="h-16 w-16 mb-4 opacity-20" />
+              <p className="text-lg font-medium">No scan results yet</p>
+              <p className="text-sm">Enter a host ID and click "Start Scan" to begin</p>
             </div>
-
-            {/* Changes Table */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="border-muted/20 shadow-lg backdrop-blur-sm bg-card/95">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-warning" />
-                        Detected Changes
-                      </CardTitle>
-                      <CardDescription>Files, registry keys, and configuration modifications</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="hover:bg-muted/50 transition-colors">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export CSV
-                      </Button>
-                      <Button size="sm" variant="destructive" className="hover:shadow-md transition-all">
-                        Create Incident
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Change</TableHead>
-                    <TableHead>Hash/Value</TableHead>
-                  </TableRow>
-                </TableHeader>
-                    <TableBody>
-                      {scanResult.changes.map((change, idx) => (
-                        <motion.tr
-                          key={idx}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.6 + idx * 0.05 }}
-                          className="hover:bg-muted/50 transition-colors"
-                        >
-                          <TableCell>
-                            <Badge variant="outline" className="border-primary/30">
-                              {change.path ? "File" : "Registry"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {change.path || change.reg_key}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={change.change === "new" ? "destructive" : "default"}
-                              className={cn(
-                                "transition-all",
-                                change.change === "modified" && "bg-warning text-warning-foreground"
-                              )}
-                            >
-                              {change.change}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
-                            {change.hash || "—"}
-                          </TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
