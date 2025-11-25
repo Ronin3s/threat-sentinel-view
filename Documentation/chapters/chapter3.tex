@@ -1,0 +1,351 @@
+\chapter{Requirements and Analysis}
+\label{ch:requirements}
+
+\section{Functional Requirements}
+
+Functional requirements define what the system must do to achieve its stated objectives. This section details the core capabilities that Threat Sentinel must provide.
+
+\subsection{FR1: Host Scanning and Discovery}
+The system shall enable users to perform network host discovery by specifying target IP addresses or CIDR ranges. Users must be able to initiate scans through a web interface and receive results showing discovered hosts with their associated metadata (IP address, hostname, status).
+
+\subsection{FR2: Port Scanning}
+The system shall provide comprehensive port scanning capabilities supporting both standard and custom port ranges. Users must be able to select scanning techniques (TCP SYN, TCP Connect, UDP) and view detailed results including open ports, services, and version information.
+
+\subsection{FR3: Service Detection}
+The system shall automatically detect services running on discovered ports, including service names, versions, and potential operating system identification.
+
+\subsection{FR4: Web Vulnerability Scanning}
+The system shall integrate web vulnerability scanning capabilities (via Nikto) enabling users to scan web servers for common vulnerabilities, misconfigurations, and security issues.
+
+\subsection{FR5: Dashboard Visualization}
+The system shall provide an interactive dashboard displaying:
+\begin{itemize}
+    \item Summary statistics (total scans, discovered hosts, identified vulnerabilities)
+    \item Recent scan activity
+    \item Vulnerability severity distribution
+    \item Network topology visualization
+\end{itemize}
+
+\subsection{FR6: Scan Management}
+The system shall allow users to:
+\begin{itemize}
+    \item Create new scans with configurable parameters
+    \item View scan history and status
+    \item Access detailed scan results
+    \item Delete or archive old scans
+\end{itemize}
+
+\subsection{FR7: Real-time Updates}
+The system shall provide real-time updates during scan execution, showing progress and preliminary results as they become available.
+
+\subsection{FR8: Data Persistence}
+The system shall store all scan configurations, results, and historical data in a persistent database, enabling long-term tracking and analysis.
+
+\subsection{FR9: Result Export}
+The system shall enable users to export scan results in multiple formats (JSON, CSV, PDF reports) for documentation and reporting purposes.
+
+\subsection{FR10: Search and Filter}
+The system shall provide search and filtering capabilities across scan results, allowing users to quickly locate specific hosts, services, or vulnerabilities.
+
+\section{Non-Functional Requirements}
+
+Non-functional requirements define how the system performs its functions, addressing quality attributes and constraints.
+
+\subsection{NFR1: Performance}
+\begin{itemize}
+    \item The system shall display scan results within 2 seconds of scan completion
+    \item The dashboard shall load within 3 seconds under normal network conditions
+    \item The system shall handle concurrent scans of up to 100 hosts without performance degradation
+\end{itemize}
+
+\subsection{NFR2: Usability}
+\begin{itemize}
+    \item The user interface shall be intuitive and require minimal training
+    \item All major functions shall be accessible within 3 clicks from the dashboard
+    \item The system shall provide contextual help and tooltips for complex features
+\end{itemize}
+
+\subsection{NFR3: Reliability}
+\begin{itemize}
+    \item The system shall gracefully handle scan failures without crashing
+    \item Failed scans shall provide informative error messages to users
+    \item The system shall maintain data integrity during concurrent operations
+\end{itemize}
+
+\subsection{NFR4: Scalability}
+\begin{itemize}
+    \item The system architecture shall support horizontal scaling of backend services
+    \item Database design shall accommodate growth to thousands of scan records
+    \item The frontend shall efficiently render large result sets through pagination
+\end{itemize}
+
+\subsection{NFR5: Security}
+\begin{itemize}
+    \item The system shall validate all user inputs to prevent injection attacks
+    \item API endpoints shall implement proper error handling without exposing sensitive information
+    \item Scan targets shall be validated to prevent unauthorized scanning
+\end{itemize}
+
+\subsection{NFR6: Maintainability}
+\begin{itemize}
+    \item Code shall follow established style guides and best practices
+    \item The system shall use modular architecture enabling component updates
+    \item Documentation shall be maintained for all major system components
+\end{itemize}
+
+\subsection{NFR7: Compatibility}
+\begin{itemize}
+    \item The web interface shall function correctly on modern browsers (Chrome, Firefox, Safari, Edge)
+    \item The system shall be deployable on Linux-based operating systems
+    \item Mobile responsiveness shall be supported for viewing results on tablets
+\end{itemize}
+
+\section{Software and Hardware Requirements}
+
+\subsection{Software Requirements}
+
+\subsubsection{Development Environment}
+\begin{itemize}
+    \item Node.js (v16 or higher) for frontend development
+    \item Python (v3.8 or higher) for backend development
+    \item Git for version control
+    \item Visual Studio Code or similar IDE
+\end{itemize}
+
+\subsubsection{Frontend Technologies}
+\begin{itemize}
+    \item React (v18) - Component-based UI framework
+    \item TypeScript - Type-safe JavaScript
+    \item Vite - Build tool and development server
+    \item TanStack Router - Client-side routing
+    \item Recharts - Data visualization library
+    \item Tailwind CSS - Utility-first CSS framework
+\end{itemize}
+
+\subsubsection{Backend Technologies}
+\begin{itemize}
+    \item Python FastAPI - High-performance web framework
+    \item PostgreSQL or SQLite - Database system
+    \item SQLAlchemy - ORM for database operations
+    \item Uvicorn - ASGI server
+\end{itemize}
+
+\subsubsection{Security Tools}
+\begin{itemize}
+    \item Nmap (v7.80 or higher) - Network scanning
+    \item Masscan (latest version) - High-speed port scanning
+    \item Nikto (v2.1.6 or higher) - Web vulnerability scanning
+\end{itemize}
+
+\subsection{Hardware Requirements}
+
+\subsubsection{Development System}
+\begin{itemize}
+    \item Processor: Dual-core CPU (2.0 GHz or higher)
+    \item Memory: 8 GB RAM minimum
+    \item Storage: 20 GB available disk space
+    \item Network: Stable internet connection
+\end{itemize}
+
+\subsubsection{Production Deployment}
+\begin{itemize}
+    \item Processor: Quad-core CPU (2.5 GHz or higher)
+    \item Memory: 16 GB RAM recommended
+    \item Storage: 50 GB SSD storage
+    \item Network: High-bandwidth connection for large-scale scanning
+\end{itemize}
+
+\section{System Analysis}
+
+\subsection{Use Case Analysis}
+
+The primary use cases for Threat Sentinel encompass various security assessment scenarios:
+
+\textbf{Use Case 1: Network Discovery}\\
+\textit{Actor:} Security Administrator\\
+\textit{Precondition:} User is authenticated and has network access\\
+\textit{Main Flow:}
+\begin{enumerate}
+    \item User navigates to Host Scan page
+    \item User enters target IP range (e.g., 192.168.1.0/24)
+    \item User configures scan options (timing, techniques)
+    \item User initiates scan
+    \item System executes Nmap scan
+    \item System displays discovered hosts in real-time
+    \item User reviews results and identifies active hosts
+\end{enumerate}
+\textit{Postcondition:} Scan results are stored in database
+
+\textbf{Use Case 2: Vulnerability Assessment}\\
+\textit{Actor:} Security Analyst\\
+\textit{Precondition:} Web server IP address is known\\
+\textit{Main Flow:}
+\begin{enumerate}
+    \item User navigates to Web Scan page
+    \item User enters target web server address
+    \item User initiates vulnerability scan
+    \item System executes Nikto scan
+    \item System processes and categorizes findings
+    \item User reviews identified vulnerabilities
+    \item User exports findings for remediation
+\end{enumerate}
+\textit{Postcondition:} Vulnerability report is generated
+
+% [DIAGRAM PLACEHOLDER: Use Case Diagram]
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{placeholder_usecase.png}
+\caption{Use Case Diagram showing primary system interactions}
+\label{fig:usecase}
+\end{figure}
+
+The use case diagram (Figure \ref{fig:usecase}) illustrates the primary interactions between users and the system. The main actor, Security Professional, can perform host scanning, port scanning, web vulnerability scanning, and access dashboard visualizations. Each use case represents a discrete workflow that delivers value to the user. The diagram shows how different scanning functions can extend basic scan functionality, promoting code reuse and consistent user experience across scan types.
+
+\subsection{Data Flow Analysis}
+
+Understanding data flow through the system is critical for effective architecture design. The following diagrams illustrate data movement at different abstraction levels.
+
+% [DIAGRAM PLACEHOLDER: DFD Level 0]
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{placeholder_dfd0.png}
+\caption{Data Flow Diagram - Level 0 (Context Diagram)}
+\label{fig:dfd0}
+\end{figure}
+
+The Level 0 DFD (Figure \ref{fig:dfd0}) provides a context-level view of the entire system. The Security Professional (external entity) interacts with the Threat Sentinel system by providing scan configurations and receiving scan results and visualizations. The system interfaces with Network Infrastructure (the targets being scanned) to gather security information. This high-level view establishes the system boundary and key external interactions.
+
+% [DIAGRAM PLACEHOLDER: DFD Level 1]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{placeholder_dfd1.png}
+\caption{Data Flow Diagram - Level 1 (Major Processes)}
+\label{fig:dfd1}
+\end{figure}
+
+The Level 1 DFD (Figure \ref{fig:dfd1}) decomposes the system into major processes:
+
+\begin{enumerate}
+    \item \textbf{Scan Configuration Process:} Accepts user inputs and validates scan parameters before queuing scans.
+    
+    \item \textbf{Scan Execution Process:} Orchestrates security tool execution (Nmap, Masscan, Nikto), manages scan lifecycle, and handles errors.
+    
+    \item \textbf{Result Processing Process:} Parses raw tool output, normalizes data formats, and stores results in the database.
+    
+    \item \textbf{Visualization Process:} Retrieves scan data, performs aggregations, and generates dashboard visualizations.
+\end{enumerate}
+
+Data stores include the Scan Database (persistent storage for all scan data) and Configuration Store (system and user preferences). This decomposition reveals the logical flow of information from user input through scan execution to result presentation.
+
+\subsection{System Breakdown}
+
+The system is architecturally divided into three primary tiers:
+
+\subsubsection{Presentation Layer (Frontend)}
+\begin{itemize}
+    \item Dashboard Component: Main entry point displaying summary statistics
+    \item Host Scan Component: Interface for network discovery
+    \item Port Scan Component: Interface for port enumeration
+    \item Web Scan Component: Interface for vulnerability scanning
+    \item Results Display Components: Tables, charts, and visualizations
+    \item Routing and Navigation: Application workflow management
+\end{itemize}
+
+\subsubsection{Application Layer (Backend API)}
+\begin{itemize}
+    \item API Endpoints: RESTful interfaces for all system operations
+    \item Scan Orchestration: Management of security tool execution
+    \item Data Processing: Parsing and normalization of scan results
+    \item Business Logic: Implementation of system rules and workflows
+    \item Error Handling: Graceful failure management
+\end{itemize}
+
+\subsubsection{Data Layer}
+\begin{itemize}
+    \item Database Schema: Structured storage for scans, hosts, services, vulnerabilities
+    \item ORM Models: Python object representations of data entities
+    \item Query Optimization: Efficient data retrieval patterns
+\end{itemize}
+
+% [DIAGRAM PLACEHOLDER: Additional UML Diagram]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{placeholder_component.png}
+\caption{Component Diagram showing system architecture}
+\label{fig:component}
+\end{figure}
+
+The component diagram (Figure \ref{fig:component}) illustrates how major system components interact. The React Frontend communicates with the FastAPI Backend through REST API calls. The backend orchestrates security scanning tools (Nmap, Masscan, Nikto) and manages data persistence through the Database layer. This architecture promotes separation of concerns, enabling independent development and testing of each layer while maintaining clear interfaces between components.
+
+\section{Evaluation Criteria}
+
+Success of the Threat Sentinel system will be measured against the following criteria:
+
+\subsection{Functional Completeness}
+\begin{itemize}
+    \item All functional requirements (FR1-FR10) are fully implemented
+    \item Each scanning tool integration works correctly
+    \item Dashboard accurately reflects scan data
+\end{itemize}
+
+\subsection{Performance Metrics}
+\begin{itemize}
+    \item Scan completion time within acceptable ranges
+    \item Dashboard load time under 3 seconds
+    \item Real-time update latency under 1 second
+\end{itemize}
+
+\subsection{Usability Assessment}
+\begin{itemize}
+    \item Users can complete common tasks (initiate scan, view results) without assistance
+    \item Interface receives positive feedback on aesthetics and intuitiveness
+    \item Error messages are clear and actionable
+\end{itemize}
+
+\subsection{Code Quality}
+\begin{itemize}
+    \item Code passes linting checks with no critical issues
+    \item TypeScript types are comprehensive with minimal use of 'any'
+    \item Functions and components follow single responsibility principle
+\end{itemize}
+
+\subsection{Integration Success}
+\begin{itemize}
+    \item Security tools execute correctly from backend
+    \item Results from all tools are properly parsed and stored
+    \item Frontend-backend communication is reliable
+\end{itemize}
+
+\section{Code of Ethics, Legal, and Social Issues}
+
+\subsection{Ethical Considerations}
+
+The development and deployment of cybersecurity scanning tools raises significant ethical concerns that must be carefully addressed:
+
+\textbf{Authorized Use:} Network scanning tools can be misused for unauthorized reconnaissance of systems. This project includes clear documentation emphasizing that Threat Sentinel must only be used against networks and systems for which the user has explicit authorization. Unauthorized scanning is illegal in most jurisdictions and violates ethical principles of cybersecurity practice.
+
+\textbf{Responsible Disclosure:} When vulnerabilities are discovered, users have an ethical obligation to report them responsibly to system owners rather than exploiting them or disclosing them publicly without allowing time for remediation.
+
+\textbf{Privacy:} Network scanning may reveal information about systems and services that their operators consider private. Users must respect privacy expectations and limit scanning to professional, legitimate purposes.
+
+\subsection{Legal Considerations}
+
+\textbf{Computer Misuse Laws:} Many countries have laws prohibiting unauthorized access to computer systems. In the UK, the Computer Misuse Act 1990 specifically criminalizes unauthorized access. Users must ensure they have proper authorization before scanning any network infrastructure.
+
+\textbf{Data Protection:} Scan results may contain personally identifiable information or sensitive business data. Storage and handling of such data must comply with relevant data protection regulations (GDPR in EU, similar regulations elsewhere).
+
+\textbf{License Compliance:} This project integrates several open-source security tools (Nmap, Masscan, Nikto), each with specific license terms. All licenses have been reviewed for compliance, and the project adheres to their requirements.
+
+\subsection{Social Implications}
+
+\textbf{Security Awareness:} By making advanced security scanning more accessible, this project contributes to raising security awareness among organizations that might otherwise lack such capabilities.
+
+\textbf{Dual-Use Technology:} Like all security tools, Threat Sentinel has dual-use potential—it can be used for legitimate security assessment or for malicious reconnaissance. This reality necessitates clear usage guidelines and education about responsible use.
+
+\textbf{Digital Divide:} Providing free, open-source security tools helps reduce the security capability gap between well-resourced and under-resourced organizations, contributing to overall improvement in cybersecurity posture across the technology ecosystem.
+
+\section{Summary}
+
+This chapter has established comprehensive requirements for Threat Sentinel, covering functional capabilities, quality attributes, and technical prerequisites. The system analysis through use cases and data flow diagrams provides a clear understanding of how the system operates and how information moves through its components. Evaluation criteria establish measurable goals for assessing project success. Finally, the ethical, legal, and social considerations section acknowledges the responsibilities inherent in developing security tools and establishes principles for their appropriate use.
+
+The following chapter details how these requirements inform the system design and implementation approach.

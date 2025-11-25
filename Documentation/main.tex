@@ -1,0 +1,123 @@
+\documentclass[12pt,a4paper]{report}
+
+% Packages
+\usepackage{times}           % Times New Roman font
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}        % For images
+\usepackage{setspace}        % For line spacing
+\usepackage{geometry}        % For margins
+\usepackage{titlesec}        % For section formatting
+\usepackage{tocloft}         % For table of contents formatting
+\usepackage{caption}         % For caption formatting
+\usepackage{float}           % For figure positioning
+\usepackage{hyperref}        % For hyperlinks
+\usepackage{natbib}          % For Harvard referencing
+\usepackage{enumitem}        % For list formatting
+\usepackage{longtable}       % For long tables
+\usepackage{array}           % For table formatting
+\usepackage{tabularx}        % For flexible tables
+\usepackage{booktabs}        % For professional tables
+\usepackage{amsmath}         % For math symbols
+\usepackage{listings}        % For code listings
+\usepackage{xcolor}          % For colors
+
+% Page geometry
+\geometry{
+    a4paper,
+    left=1.5in,
+    right=1in,
+    top=1in,
+    bottom=1in
+}
+
+% Line spacing
+\onehalfspacing
+
+% Caption formatting (10pt)
+\captionsetup{font={small,rm},labelfont=bf}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    tabsize=2
+}
+
+% Hyperlink setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% Roman numerals for front matter
+\pagenumbering{roman}
+
+\begin{document}
+
+% Title Page
+\input{frontmatter/titlepage}
+\clearpage
+
+% Declaration
+\input{frontmatter/declaration}
+\clearpage
+
+% Abstract
+\input{frontmatter/abstract}
+\clearpage
+
+% Acknowledgments
+\input{frontmatter/acknowledgments}
+\clearpage
+
+% Table of Contents
+\tableofcontents
+\clearpage
+
+% List of Figures
+\listoffigures
+\clearpage
+
+% List of Tables
+\listoftables
+\clearpage
+
+% Start main content with Arabic numerals
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% Chapters
+\input{chapters/chapter1}
+\clearpage
+
+\input{chapters/chapter2}
+\clearpage
+
+\input{chapters/chapter3}
+\clearpage
+
+\input{chapters/chapter4}
+\clearpage
+
+\input{chapters/chapter5}
+\clearpage
+
+\input{chapters/chapter6}
+\clearpage
+
+% References
+\bibliographystyle{agsm}  % Harvard style
+\bibliography{references}
+\clearpage
+
+% Appendices
+\appendix
+\input{appendices/appendixA}
+
+\end{document}
