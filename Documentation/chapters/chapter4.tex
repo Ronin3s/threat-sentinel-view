@@ -1,538 +1,261 @@
-\chapter{Design, Implementation, and Testing}
-\label{ch:implementation}
+\chapter{System Design}
+\label{ch:design}
 
-\section{System Design}
+\section{Overview}
 
-\subsection{Architectural Overview}
+This chapter presents the architectural and detailed design of SIREN, building upon the requirements established in Chapter 3. The design employs a modular three-tier architecture ensuring separation of concerns, scalability, and maintainability. Design decisions prioritize simplicity and accessibility for SME deployment while maintaining robust security incident management capabilities.
 
-Threat Sentinel employs a three-tier client-server architecture designed for scalability, maintainability, and separation of concerns. The architecture follows modern web application best practices, utilizing REST API communication between frontend and backend layers.
+\section{Architecture Design}
 
-% [DIAGRAM PLACEHOLDER: System Architecture]
+\subsection{System Architecture}
+
+Figure \ref{fig:system_arch} illustrates SIREN's overall system architecture.
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{placeholder_architecture.png}
-\caption{High-level system architecture diagram}
-\label{fig:architecture}
+\begin{verbatim}
++------------------+         +------------------+         +------------------+
+|  Web Browser     |         |                  |         |  Windows Agent   |
+|  (Client)        |<------->|  SIREN Platform  |<------->|  (Endpoints)     |
+|                  |  HTTPS  |                  |  HTTPS  |                  |
+|  - React UI      |         |  Backend Server  |         |  - Event Monitor |
+|  - Dashboard     |         |  - FastAPI       |         |  - Local Filter  |
+|  - Investigation |         |  - Correlation   |         |  - Event Forward |
++------------------+         |  - Alerting      |         +------------------+
+                             |                  |
+                             |  +------------+  |
+                             |  | PostgreSQL |  |
+                             |  | Database   |  |
+                             |  +------------+  |
+                             +------------------+
+
+Data Flow:
+1. Agents collect Windows events → Forward to Backend
+2. Backend normalizes → Stores in Database → Runs correlation
+3. Correlation Engine detects patterns → Generates incidents
+4. Alert Service notifies analysts via email/webhook
+5. Frontend queries API → Displays incidents and events
+\end{verbatim}
+\caption{SIREN System Architecture}
+\label{fig:system_arch}
 \end{figure}
 
-The architectural design (Figure \ref{fig:architecture}) separates the system into three distinct layers:
+\subsection{Component Responsibilities}
 
-\textbf{Frontend Layer:} Built with React and TypeScript, this layer provides the user interface and handles all user interactions. The frontend is a Single Page Application (SPA) that communicates asynchronously with the backend via RESTful API calls. State management is handled through React hooks and context, ensuring efficient re-rendering and responsive user experience.
-
-\textbf{Backend Layer:} Implemented using Python FastAPI, the backend exposes REST endpoints for all system operations. It orchestrates security tool execution, processes results, and manages data persistence. FastAPI was chosen for its high performance, automatic API documentation, and native support for asynchronous operations—critical for managing long-running security scans.
-
-\textbf{Data Layer:} PostgreSQL (or SQLite for lighter deployments) serves as the persistent data store. SQLAlchemy ORM provides the interface between Python code and the database, enabling database-agnostic code and simplified query construction.
-
-\subsection{Frontend Design}
-
-\subsubsection{Component Architecture}
-
-The frontend follows a component-based architecture with clear separation between presentational and container components:
-
+\textbf{Frontend (React TypeScript):}
 \begin{itemize}
-    \item \textbf{Page Components:} Top-level components (Dashboard, HostScan, PortScan, WebScan) that represent complete views
-    \item \textbf{Feature Components:} Reusable components with specific functionality (ScanForm, ResultsTable, StatCard)
-    \item \textbf{UI Components:} Generic, reusable UI elements (Button, Card, Modal)
-    \item \textbf{Layout Components:} Structural components (Header, Sidebar, Layout)
+    \item Renders dashboard displaying real-time security metrics
+    \item Provides incident investigation interface
+    \item Manages user interactions and form submissions
+    \item Executes API calls to backend services
 \end{itemize}
 
-\subsubsection{Routing Design}
-
-Client-side routing is implemented using TanStack Router, providing type-safe navigation between pages:
-
-\begin{lstlisting}[language=JavaScript, caption=Routing configuration]
-const routes = [
-  { path: '/', component: Dashboard },
-  { path: '/host-scan', component: HostScan },
-  { path: '/port-scan', component: PortScan },
-  { path: '/web-scan', component: WebScan },
-  { path: '/scan/:id', component: ScanDetails }
-]
-\end{lstlisting}
-
-\subsubsection{State Management}
-
-State is managed at appropriate levels:
+\textbf{Backend (FastAPI):}
 \begin{itemize}
-    \item Local component state for UI interactions (form inputs, modal visibility)
-    \item Context providers for shared state (user settings, theme)
-    \item API data fetched on-demand and cached appropriately
+    \item Exposes REST API endpoints for all operations
+    \item Implements correlation engine for event analysis
+    \item Manages incident lifecycle and workflow
+    \item Handles authentication and authorization
+    \item Orchestrates alert notifications
 \end{itemize}
 
-\subsubsection{UI Design Principles}
+\textbf{Database (PostgreSQL):}
+\begin{itemize}
+    \item Stores security events with timestamps and metadata
+    \item Maintains incident records with status tracking
+    \item Holds correlation rules and configurations
+    \item Supports efficient time-series queries
+\end{itemize}
 
-% [DIAGRAM PLACEHOLDER: UI Wireframes]
+\textbf{Windows Agent (Python):}
+\begin{itemize}
+    \item Monitors Windows Event Logs and Sysmon
+    \item Filters events based on security relevance
+    \item Forwards events to backend via authenticated API
+    \item Operates with minimal resource footprint
+\end{itemize}
+
+\section{Database Design}
+
+\subsection{Schema Design}
+
+The database schema supports efficient event storage and rapid incident queries.
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{placeholder_ui_dashboard.png}
-\caption{Dashboard UI design showing key components}
-\label{fig:ui_dashboard}
+\begin{verbatim}
++-------------------+       +-------------------+       +-------------------+
+| events            |       | incidents         |       | correlation_rules |
++-------------------+       +-------------------+       +-------------------+
+| id (PK)          |       | id (PK)          |       | id (PK)          |
+| timestamp        |       | created_at       |       | name             |
+| source           |       | severity         |       | description      |
+| event_type       |       | status           |       | pattern          |
+| severity         |       | title            |       | threshold        |
+| hostname         |       | description      |       | timewindow       |
+| event_data (JSON)|       | assigned_to      |       | enabled          |
+| incident_id (FK) |       +-------------------+       +-------------------+
++-------------------+              |
+        |                          |
+        +------+-------------------+
+               |
+        +------v--------+
+        | event_incident|
+        | (many-to-many)|
+        +---------------+
+        | event_id (FK) |
+        | incident_id(FK)|
+        +---------------+
+
+Indexes:
+- events.timestamp (B-tree) for time-range queries
+- events.hostname (Hash) for host-specific searches
+- incidents.status (Hash) for status filtering
+- incidents.created_at (B-tree) for timeline queries
+\end{verbatim}
+\caption{Database Schema showing entity relationships}
+\label{fig:db_schema}
 \end{figure}
 
-The user interface (Figure \ref{fig:ui_dashboard}) prioritizes clarity and efficiency:
+\subsection{Data Models}
 
+\textbf{Event Model:}
+Events represent individual security occurrences captured from endpoints. The JSON event\_data field provides flexibility for varying event structures while maintaining queryable common fields.
+
+\textbf{Incident Model:}
+Incidents aggregate related events based on correlation rules. Status field supports workflow states (new, investigating, contained, resolved). Severity classification (low, medium, high, critical) drives alert prioritization.
+
+\textbf{Correlation Rule Model:}
+Rules define patterns triggering incident generation. Pattern field specifies matching criteria (e.g., "5 failed logins from same IP"). Timewindow constrains temporal correlation scope.
+
+\section{Interface Design}
+
+\subsection{Dashboard Design}
+
+The dashboard provides at-a-glance security status visibility:
+
+\textbf{Layout Structure:}
 \begin{itemize}
-    \item \textbf{Dashboard-centric:} The dashboard serves as the central hub, providing quick access to all features
-    \item \textbf{Consistent Navigation:} Sidebar navigation remains accessible from all pages
-    \item \textbf{Visual Hierarchy:} Important information uses larger fonts, bold weights, and prominent colors
-    \item \textbf{Data Visualization:} Charts and graphs present complex data in digestible formats
-    \item \textbf{Responsive Design:} Layouts adapt to different screen sizes using Tailwind's responsive utilities
+    \item Header: Logo, navigation menu, user profile
+    \item Summary Cards: Total incidents, active alerts, monitored hosts, event rate
+    \item Visualization Panel: Incident severity pie chart, event timeline graph
+    \item Recent Incidents Table: Latest 10 incidents with severity, timestamp, status
+    \item Quick Actions: Create manual incident, view all events, configure rules
 \end{itemize}
 
-\subsection{Backend Design}
+\subsection{Incident Investigation Interface}
 
-\subsubsection{API Design}
+Investigation workflow centers on comprehensive event context:
 
-The REST API follows standard conventions with clear resource-based endpoints:
-
-\begin{lstlisting}[language=Python, caption=API endpoint structure]
-# Scan operations
-POST   /api/scans          # Create new scan
-GET    /api/scans          # List all scans
-GET    /api/scans/{id}     # Get scan details
-DELETE /api/scans/{id}     # Delete scan
-
-# Host operations
-GET    /api/hosts          # List discovered hosts
-GET    /api/hosts/{id}     # Get host details
-
-# Dashboard data
-GET    /api/dashboard/stats    # Get summary statistics
-GET    /api/dashboard/recent   # Get recent activity
-\end{lstlisting}
-
-\subsubsection{Scan Orchestration}
-
-The backend implements a scan orchestration system that manages security tool execution:
-
-\begin{enumerate}
-    \item \textbf{Validation:} Incoming scan requests are validated for proper format and authorized targets
-    \item \textbf{Configuration:} Scan parameters are translated into appropriate command-line arguments
-    \item \textbf{Execution:} Security tools are spawned as subprocesses with output captured
-    \item \textbf{Parsing:} Tool output is parsed using format-specific parsers
-    \item \textbf{Storage:} Processed results are stored in the database
-    \item \textbf{Notification:} Frontend is notified of scan completion (via polling or WebSocket)
-\end{enumerate}
-
-\subsubsection{Tool Integration}
-
-Each security tool has a dedicated wrapper class encapsulating its execution and output parsing:
-
-\begin{lstlisting}[language=Python, caption=Nmap integration example]
-class NmapScanner:
-    def execute(self, target: str, options: dict):
-        # Build command
-        cmd = ['nmap'] + self.build_options(options)
-        cmd.append(target)
-        
-        # Execute
-        result = subprocess.run(cmd, capture_output=True)
-        
-        # Parse XML output
-        return self.parse_xml(result.stdout)
-        
-    def parse_xml(self, xml_data):
-        # Parse Nmap XML format
-        # Extract hosts, ports, services
-        return parsed_results
-\end{lstlisting}
-
-\subsection{Database Design}
-
-\subsubsection{Schema Design}
-
-The database schema is designed to efficiently store scan information while supporting complex queries:
-
-\begin{lstlisting}[language=SQL, caption=Core database schema]
--- Scans table
-CREATE TABLE scans (
-    id SERIAL PRIMARY KEY,
-    type VARCHAR(50),
-    target VARCHAR(255),
-    status VARCHAR(50),
-    created_at TIMESTAMP,
-    completed_at TIMESTAMP
-);
-
--- Hosts table
-CREATE TABLE hosts (
-    id SERIAL PRIMARY KEY,
-    scan_id INTEGER REFERENCES scans(id),
-    ip_address VARCHAR(45),
-    hostname VARCHAR(255),
-    status VARCHAR(50)
-);
-
--- Ports table
-CREATE TABLE ports (
-    id SERIAL PRIMARY KEY,
-    host_id INTEGER REFERENCES hosts(id),
-    port INTEGER,
-    protocol VARCHAR(10),
-    state VARCHAR(20),
-    service VARCHAR(100),
-    version VARCHAR(255)
-);
-
--- Vulnerabilities table
-CREATE TABLE vulnerabilities (
-    id SERIAL PRIMARY KEY,
-    host_id INTEGER REFERENCES hosts(id),
-    severity VARCHAR(20),
-    description TEXT,
-    evidence TEXT
-);
-\end{lstlisting}
-
-The schema uses foreign keys to maintain referential integrity and supports efficient joins for complex queries retrieving scan results with all associated details.
-
-\section{Implementation Details}
-
-\subsection{Frontend Implementation}
-
-\subsubsection{TypeScript Integration}
-
-TypeScript provides compile-time type checking, reducing runtime errors and improving code maintainability:
-
-\begin{lstlisting}[language=TypeScript, caption=Type definitions]
-// Scan result types
-interface ScanResult {
-    id: number;
-    type: 'host' | 'port' | 'web';
-    target: string;
-    status: 'pending' | 'running' | 'completed' | 'failed';
-    created_at: string;
-    results?: HostResult[] | PortResult[] | VulnResult[];
-}
-
-interface HostResult {
-    ip_address: string;
-    hostname?: string;
-    status: 'up' | 'down';
-    ports: number;
-}
-\end{lstlisting}
-
-\subsubsection{API Integration}
-
-A centralized API client handles all backend communication:
-
-\begin{lstlisting}[language=TypeScript, caption=API client implementation]
-class ApiClient {
-    private baseUrl = 'http://localhost:8000/api';
-    
-    async createScan(data: ScanRequest): Promise<ScanResult> {
-        const response = await fetch(`${this.baseUrl}/scans`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        return response.json();
-    }
-    
-    async getScans(): Promise<ScanResult[]> {
-        const response = await fetch(`${this.baseUrl}/scans`);
-        return response.json();
-    }
-}
-\end{lstlisting}
-
-\subsubsection{Visualization Implementation}
-
-Data visualization uses Recharts library for responsive, interactive charts:
-
-\begin{lstlisting}[language=TypeScript, caption=Chart component example]
-function VulnerabilityChart({ data }) {
-    return (
-        <PieChart width={400} height={300}>
-            <Pie data={data} dataKey="count" nameKey="severity"
-                 label={entry => `${entry.severity}: ${entry.count}`}>
-                {data.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[entry.severity]} />
-                ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-        </PieChart>
-    );
-}
-\end{lstlisting}
-
-\subsection{Backend Implementation}
-
-\subsubsection{FastAPI Endpoints}
-
-FastAPI decorators define endpoints with automatic validation and documentation:
-
-\begin{lstlisting}[language=Python, caption=Scan creation endpoint]
-@app.post("/api/scans", response_model=ScanResponse)
-async def create_scan(scan_request: ScanRequest, db: Session = Depends(get_db)):
-    # Validate scan parameters
-    if not validate_target(scan_request.target):
-        raise HTTPException(status_code=400, detail="Invalid target")
-    
-    # Create database record
-    scan = Scan(
-        type=scan_request.type,
-        target=scan_request.target,
-        status="pending"
-    )
-    db.add(scan)
-    db.commit()
-    
-    # Execute scan asynchronously
-    background_tasks.add_task(execute_scan, scan.id, scan_request)
-    
-    return scan
-\end{lstlisting}
-
-\subsubsection{Asynchronous Scan Execution}
-
-Long-running scans execute in background tasks to avoid blocking API responses:
-
-\begin{lstlisting}[language=Python, caption=Background task execution]
-async def execute_scan(scan_id: int, request: ScanRequest):
-    db = SessionLocal()
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
-    
-    try:
-        scan.status = "running"
-        db.commit()
-        
-        # Execute appropriate scanner
-        if request.type == "host":
-            results = nmap_scanner.execute(request.target, request.options)
-        elif request.type == "port":
-            results = masscan_scanner.execute(request.target, request.options)
-        
-        # Store results
-        store_results(db, scan_id, results)
-        
-        scan.status = "completed"
-        scan.completed_at = datetime.now()
-        
-    except Exception as e:
-        scan.status = "failed"
-        scan.error = str(e)
-    
-    finally:
-        db.commit()
-        db.close()
-\end{lstlisting}
-
-\subsection{Algorithms and Key Processes}
-
-\subsubsection{Result Parsing Algorithm}
-
-Nmap XML output parsing follows a systematic approach:
-
-\begin{lstlisting}[language=Python, caption=Nmap XML parsing algorithm]
-def parse_nmap_xml(xml_data):
-    tree = ET.fromstring(xml_data)
-    results = []
-    
-    for host in tree.findall('host'):
-        # Extract host information
-        address = host.find('address').get('addr')
-        status = host.find('status').get('state')
-        
-        # Extract hostname if available
-        hostnames = host.find('hostnames')
-        hostname = None
-        if hostnames:
-            hostname_elem = hostnames.find('hostname')
-            if hostname_elem is not None:
-                hostname = hostname_elem.get('name')
-        
-        # Extract port information
-        ports = []
-        ports_elem = host.find('ports')
-        if ports_elem:
-            for port in ports_elem.findall('port'):
-                port_data = {
-                    'port': int(port.get('portid')),
-                    'protocol': port.get('protocol'),
-                    'state': port.find('state').get('state'),
-                    'service': port.find('service').get('name') if port.find('service') is not None else 'unknown'
-                }
-                ports.append(port_data)
-        
-        results.append({
-            'ip_address': address,
-            'hostname': hostname,
-            'status': status,
-            'ports': ports
-        })
-    
-    return results
-\end{lstlisting}
-
-\subsubsection{Dashboard Statistics Aggregation}
-
-The dashboard requires aggregated statistics computed efficiently:
-
-\begin{lstlisting}[language=Python, caption=Statistics computation]
-def compute_dashboard_stats(db: Session):
-    stats = {
-        'total_scans': db.query(func.count(Scan.id)).scalar(),
-        'total_hosts': db.query(func.count(Host.id)).scalar(),
-        'total_vulnerabilities': db.query(func.count(Vulnerability.id)).scalar(),
-        'severity_distribution': db.query(
-            Vulnerability.severity,
-            func.count(Vulnerability.id)
-        ).group_by(Vulnerability.severity).all(),
-        'recent_scans': db.query(Scan).order_by(
-            Scan.created_at.desc()
-        ).limit(10).all()
-    }
-    return stats
-\end{lstlisting}
-
-\section{Testing Methodology}
-
-\subsection{Testing Strategy}
-
-A comprehensive testing strategy ensures system reliability and correctness across all layers.
-
-\subsubsection{Unit Testing}
-
-Individual functions and components are tested in isolation:
-
-\textbf{Frontend Unit Tests:} React components tested using Jest and React Testing Library
-\begin{lstlisting}[language=JavaScript, caption=Component unit test]
-describe('ScanForm', () => {
-    test('validates IP address input', () => {
-        render(<ScanForm />);
-        const input = screen.getByLabelText('Target IP');
-        fireEvent.change(input, { target: { value: 'invalid' } });
-        expect(screen.getByText('Invalid IP address')).toBeInTheDocument();
-    });
-});
-\end{lstlisting}
-
-\textbf{Backend Unit Tests:} Python functions tested using pytest
-\begin{lstlisting}[language=Python, caption=Backend unit test]
-def test_nmap_xml_parsing():
-    xml_data = """<nmaprun>...</nmaprun>"""
-    results = parse_nmap_xml(xml_data)
-    assert len(results) == 1
-    assert results[0]['ip_address'] == '192.168.1.1'
-    assert results[0]['status'] == 'up'
-\end{lstlisting}
-
-\subsubsection{Integration Testing}
-
-Integration tests verify that components work correctly together:
-
+\textbf{Components:}
 \begin{itemize}
-    \item Frontend-Backend API integration tests
-    \item Database operations with ORM integration tests
-    \item Security tool execution and result parsing tests
+    \item Incident Header: Title, severity badge, status, timestamps
+    \item Event Timeline: Chronological display of correlated events
+    \item Affected Assets: List of involved hostnames and IP addresses
+    \item Investigation Notes: Analyst comments and observations
+    \item Action Buttons: Update status, assign analyst, export report
 \end{itemize}
 
-\begin{lstlisting}[language=Python, caption=API integration test]
-def test_create_and_retrieve_scan(client, db):
-    # Create scan
-    response = client.post('/api/scans', json={
-        'type': 'host',
-        'target': '192.168.1.0/24'
-    })
-    assert response.status_code == 201
-    scan_id = response.json()['id']
-    
-    # Retrieve scan
-    response = client.get(f'/api/scans/{scan_id}')
-    assert response.status_code == 200
-    assert response.json()['target'] == '192.168.1.0/24'
-\end{lstlisting}
+\subsection{Configuration Interface}
 
-\subsection{Functional Testing}
+Administrative functions support system customization:
 
-Functional tests verify that each system requirement is met:
+\textbf{Correlation Rules Management:}
+Form-based rule creation specifying event patterns, thresholds, time windows, and severity mappings.
 
-\begin{table}[H]
-\centering
-\caption{Functional Test Cases}
-\label{tab:functional_tests}
-\begin{tabularx}{\textwidth}{|l|X|l|}
-\hline
-\textbf{Test ID} & \textbf{Test Description} & \textbf{Result} \\
-\hline
-FT-01 & User can create host scan with valid IP range & Pass \\
-\hline
-FT-02 & System rejects scan with invalid IP format & Pass \\
-\hline
-FT-03 & Dashboard displays correct scan statistics & Pass \\
-\hline
-FT-04 & Scan results are persisted to database & Pass \\
-\hline
-FT-05 & User can view historical scan results & Pass \\
-\hline
-FT-06 & Port scan identifies open ports correctly & Pass \\
-\hline
-FT-07 & Web scan detects known vulnerabilities & Pass \\
-\hline
-FT-08 & Real-time updates show scan progress & Pass \\
-\hline
-FT-09 & Export functionality generates correct format & Pass \\
-\hline
-FT-10 & Search/filter finds relevant results & Pass \\
-\hline
-\end{tabularx}
-\end{table}
+\textbf{Alert Configuration:}
+Email SMTP settings, webhook URLs, notification templates, escalation policies.
 
-\subsection{User Acceptance Testing}
+\textbf{User Management:}
+User account creation, role assignment (admin, analyst, viewer), permission management.
 
-User acceptance testing involves representative users performing realistic tasks:
+\section{API Design}
 
-\textbf{Test Scenario 1: Network Discovery}
+The REST API follows standard conventions for consistency and discoverability.
+
+\subsection{Endpoint Structure}
+
+\begin{verbatim}
+Event Operations:
+  POST   /api/events              - Ingest new event
+  GET    /api/events              - List events (with filters)
+  GET    /api/events/{id}         - Get event details
+
+Incident Operations:
+  GET    /api/incidents           - List incidents
+  GET    /api/incidents/{id}      - Get incident details
+  POST   /api/incidents           - Create manual incident
+  PUT    /api/incidents/{id}      - Update incident
+  
+Dashboard Operations:
+  GET    /api/dashboard/stats     - Get summary statistics
+  GET    /api/dashboard/timeline  - Get event timeline data
+
+Configuration Operations:
+  GET    /api/rules               - List correlation rules
+  POST   /api/rules               - Create rule
+  PUT    /api/rules/{id}          - Update rule
+  DELETE /api/rules/{id}          - Delete rule
+\end{verbatim}
+
+\subsection{Authentication Design}
+
+JWT (JSON Web Token) based authentication provides stateless security:
+
 \begin{enumerate}
-    \item User logs into the system
-    \item User navigates to Host Scan page
-    \item User enters local network range (192.168.1.0/24)
-    \item User initiates scan
-    \item User observes real-time progress updates
-    \item User reviews discovered hosts
-    \item User exports results
+    \item User submits credentials to /api/auth/login
+    \item Backend validates credentials, generates JWT containing user ID and role
+    \item Client stores JWT, includes in Authorization header for subsequent requests
+    \item Backend validates JWT signature on each request, extracts user context
+    \item Tokens expire after configurable duration, requiring re-authentication
 \end{enumerate}
-\textit{Success Criteria:} User completes task without assistance in under 5 minutes
 
-\textbf{Test Scenario 2: Vulnerability Assessment}
-\begin{enumerate}
-    \item User navigates to Web Scan page
-    \item User enters target web server
-    \item User configures scan options
-    \item User initiates vulnerability scan
-    \item User reviews identified vulnerabilities
-    \item User accesses detailed vulnerability information
-\end{enumerate}
-\textit{Success Criteria:} User understands severity levels and can identify critical issues
+\section{Security Design}
 
-\subsection{Performance Testing}
+\subsection{Data Protection}
 
-Performance testing validates non-functional requirements:
+\textbf{Encryption in Transit:}
+All communications use HTTPS with TLS 1.2+ encryption.
 
-\begin{table}[H]
-\centering
-\caption{Performance Test Results}
-\label{tab:performance_tests}
-\begin{tabularx}{\textwidth}{|X|c|c|c|}
-\hline
-\textbf{Metric} & \textbf{Target} & \textbf{Actual} & \textbf{Status} \\
-\hline
-Dashboard load time & <3s & 1.8s & Pass \\
-\hline
-Scan result display & <2s & 1.2s & Pass \\
-\hline
-API response time (typical) & <500ms & 320ms & Pass \\
-\hline
-Concurrent scan handling (100 hosts) & No degradation & Acceptable & Pass \\
-\hline
-Database query time (1000 records) & <1s & 0.4s & Pass \\
-\hline
-\end{tabularx}
-\end{table}
+\textbf{Encryption at Rest:}
+Sensitive configuration data (SMTP passwords, API keys) encrypted using AES-256.
+
+\textbf{Input Validation:}
+All API inputs validated using Pydantic schemas, preventing injection attacks.
+
+\textbf{SQL Injection Prevention:}
+SQLAlchemy ORM with parameterized queries eliminates SQL injection vectors.
+
+\subsection{Access Control}
+
+Role-Based Access Control (RBAC) enforces authorization:
+
+\begin{itemize}
+    \item \textbf{Administrator:} Full system access, configuration management, user management
+    \item \textbf{Analyst:} Incident investigation, event viewing, status updates
+    \item \textbf{Viewer:} Read-only dashboard and incident access
+\end{itemize}
+
+\section{Scalability Design}
+
+\subsection{Horizontal Scaling}
+
+Backend services designed as stateless components enabling horizontal scaling:
+\begin{itemize}
+    \item Multiple FastAPI instances behind load balancer
+    \item Session state stored in database, not server memory
+    \item Correlation engine can run as separate scalable service
+\end{itemize}
+
+\subsection{Database Optimization}
+
+\begin{itemize}
+    \item Indexes on frequently queried fields
+    \item Partitioning events table by timestamp for large deployments
+    \item Archival strategy moving old events to separate storage
+    \item Connection pooling limiting concurrent database connections
+\end{itemize}
 
 \section{Summary}
 
-This chapter has detailed the design and implementation of Threat Sentinel, from high-level architecture through specific implementation decisions. The three-tier architecture provides clear separation of concerns while enabling efficient communication between layers. The frontend leverages modern React patterns and TypeScript for type safety, while the backend uses FastAPI for high-performance asynchronous processing. Comprehensive testing at multiple levels ensures system reliability and validates that requirements are met. The following chapter presents results from system operation and discusses achievements relative to project objectives.
+This chapter detailed SIREN's system design across architecture, database, interface, API, and security dimensions. The modular three-tier design separates concerns while enabling component-level scaling. Database schema optimizes time-series event queries while supporting flexible correlation. Interface design prioritizes analyst workflow efficiency. Security design implements defense-in-depth protecting data and access. The architecture balances simplicity for SME deployment with robustness for production security operations.

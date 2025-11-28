@@ -1,351 +1,525 @@
-\chapter{Requirements and Analysis}
+\chapter{Requirements and System Analysis}
 \label{ch:requirements}
 
 \section{Functional Requirements}
 
-Functional requirements define what the system must do to achieve its stated objectives. This section details the core capabilities that Threat Sentinel must provide.
+Functional requirements define the specific capabilities that SIREN must provide to fulfill its design objectives. These requirements focus on what the system does from the user perspective.
 
-\subsection{FR1: Host Scanning and Discovery}
-The system shall enable users to perform network host discovery by specifying target IP addresses or CIDR ranges. Users must be able to initiate scans through a web interface and receive results showing discovered hosts with their associated metadata (IP address, hostname, status).
+\subsection{FR1: Event Ingestion}
+The system shall ingest security events from Python agents deployed on Windows systems, including Windows Event Logs, Sysmon events, and security-relevant application logs. Events must be received via REST API with proper authentication and validation.
 
-\subsection{FR2: Port Scanning}
-The system shall provide comprehensive port scanning capabilities supporting both standard and custom port ranges. Users must be able to select scanning techniques (TCP SYN, TCP Connect, UDP) and view detailed results including open ports, services, and version information.
+\subsection{FR2: Event Normalization}
+The system shall normalize events from different sources into a unified schema, extracting common fields (timestamp, severity, source, event type) to enable consistent processing and correlation.
 
-\subsection{FR3: Service Detection}
-The system shall automatically detect services running on discovered ports, including service names, versions, and potential operating system identification.
+\subsection{FR3: Automated Correlation}
+The system shall automatically correlate related security events using configurable rule sets to identify incident patterns such as failed login sequences, privilege escalation attempts, and data exfiltration indicators.
 
-\subsection{FR4: Web Vulnerability Scanning}
-The system shall integrate web vulnerability scanning capabilities (via Nikto) enabling users to scan web servers for common vulnerabilities, misconfigurations, and security issues.
+\subsection{FR4: Incident Generation}
+When correlation rules are satisfied, the system shall automatically create incident records with severity classification, affected assets, event timeline, and suggested investigation steps.
 
-\subsection{FR5: Dashboard Visualization}
-The system shall provide an interactive dashboard displaying:
-\begin{itemize}
-    \item Summary statistics (total scans, discovered hosts, identified vulnerabilities)
-    \item Recent scan activity
-    \item Vulnerability severity distribution
-    \item Network topology visualization
-\end{itemize}
+\subsection{FR5: Real-time Dashboard}
+The system shall provide a real-time web dashboard displaying current security status, active incidents, recent events, and system health metrics with auto-refresh capabilities.
 
-\subsection{FR6: Scan Management}
-The system shall allow users to:
-\begin{itemize}
-    \item Create new scans with configurable parameters
-    \item View scan history and status
-    \item Access detailed scan results
-    \item Delete or archive old scans
-\end{itemize}
+\subsection{FR6: Incident Investigation}
+The system shall enable analysts to investigate incidents through a dedicated interface showing all correlated events, affected assets, timeline visualization, and investigation notes functionality.
 
-\subsection{FR7: Real-time Updates}
-The system shall provide real-time updates during scan execution, showing progress and preliminary results as they become available.
+\subsection{FR7: Alerting and Notifications}
+The system shall generate alerts for high-severity incidents through multiple channels (email, webhook) based on configurable notification policies and escalation rules.
 
-\subsection{FR8: Data Persistence}
-The system shall store all scan configurations, results, and historical data in a persistent database, enabling long-term tracking and analysis.
+\subsection{FR8: Incident Lifecycle Management}
+The system shall support complete incident lifecycle tracking with status transitions (new, investigating, contained, resolved), assignment to analysts, and resolution documentation.
 
-\subsection{FR9: Result Export}
-The system shall enable users to export scan results in multiple formats (JSON, CSV, PDF reports) for documentation and reporting purposes.
+\subsection{FR9: Reporting}
+The system shall generate incident reports in exportable formats (PDF, CSV, JSON) containing incident details, timelines, response actions, and resolution information.
 
-\subsection{FR10: Search and Filter}
-The system shall provide search and filtering capabilities across scan results, allowing users to quickly locate specific hosts, services, or vulnerabilities.
+\subsection{FR10: User Authentication}
+The system shall implement user authentication with role-based access control distinguishing between administrator, analyst, and viewer permissions.
+
+\section{Technical Requirements}
+
+Technical requirements specify the implementation technologies and architectural constraints.
+
+\subsection{TR1: Web Framework}
+Frontend shall be implemented using React 18 with TypeScript for type safety and component reusability.
+
+\subsection{TR2: Backend Framework}
+Backend shall utilize Python FastAPI framework for high-performance asynchro nous API services.
+
+\subsection{TR3: Database System}
+PostgreSQL shall serve as the primary database for persistent storage of events, incidents, and configuration data.
+
+\subsection{TR4: API Design}
+RESTful API architecture shall be employed with JSON request/response formats, supporting standard HTTP methods (GET, POST, PUT, DELETE).
+
+\subsection{TR5: Real-time Communication}
+WebSocket or Server-Sent Events shall enable real-time push of incident updates to connected dashboard clients.
+
+\subsection{TR6: Agent Technology}
+Windows agents shall be developed in Python 3.8+ with minimal external dependencies to ensure lightweight deployment.
+
+\subsection{TR7: Data Security}
+All API communications shall use HTTPS encryption, and sensitive data (passwords, API keys) shall be hashed using industry-standard algorithms.
+
+\section{Business Requirements}
+
+Business requirements address organizational and operational needs beyond technical functionality.
+
+\subsection{BR1: Cost Efficiency}
+The solution shall utilize open-source technologies and standard server infrastructure to minimize licensing and deployment costs.
+
+\subsection{BR2: Scalability}
+System architecture shall support scaling from small deployments (10-50 endpoints) to medium deployments (500+ endpoints) through horizontal scaling of backend services.
+
+\subsection{BR3: Ease of Deployment}
+Deployment shall be achievable by IT staff with standard system administration skills without requiring specialized security engineering expertise.
+
+\subsection{BR4: Maintainability}
+System design shall facilitate ongoing maintenance with clear documentation, modular architecture, and standard technology choices.
+
+\subsection{BR5: Compliance Support}
+Incident records and audit logs shall support common compliance requirements (SOC 2, ISO 27001) through comprehensive event tracking and reporting.
 
 \section{Non-Functional Requirements}
 
-Non-functional requirements define how the system performs its functions, addressing quality attributes and constraints.
+Non-functional requirements define quality attributes and performance characteristics.
 
-\subsection{NFR1: Performance}
+\subsection{NFR1: Performance - Response Time}
+The dashboard shall load within 2 seconds under normal conditions, and API endpoints shall respond within 500ms for standard queries.
+
+\subsection{NFR2: Performance - Event Processing}
+The correlation engine shall process incoming events with maximum latency of 5 seconds from receipt to incident generation.
+
+\subsection{NFR3: Performance - Concurrent Users}
+The system shall support at least 20 concurrent dashboard users without performance degradation.
+
+\subsection{NFR4: Reliability - Availability}
+The system shall maintain 99.5\% availability during business hours with graceful degradation when components fail.
+
+\subsection{NFR5: Reliability - Data Integrity}
+All security events shall be persisted to database with transaction safety preventing data loss even during system failures.
+
+\subsection{NFR6: Usability}
+The interface shall be intuitive enough that trained SOC analysts can perform common tasks (view incidents, investigate events, generate reports) without referring to documentation.
+
+\subsection{NFR7: Maintainability - Code Quality}
+Source code shall follow PEP 8 (Python) and ESLint (TypeScript) coding standards with minimum 70\% test coverage.
+
+\subsection{NFR8: Security}
+The system shall implement defense-in-depth with input validation, parameterized database queries, session management, and CSRF protection.
+
+\section{Software Requirements}
+
+\subsection{Development Environment}
 \begin{itemize}
-    \item The system shall display scan results within 2 seconds of scan completion
-    \item The dashboard shall load within 3 seconds under normal network conditions
-    \item The system shall handle concurrent scans of up to 100 hosts without performance degradation
+    \item Python 3.8 or higher
+    \item Node.js 16 or higher with npm
+    \item PostgreSQL 12 or higher
+    \item Git version control
+    \item Visual Studio Code or equivalent IDE
 \end{itemize}
 
-\subsection{NFR2: Usability}
+\subsection{Frontend Dependencies}
 \begin{itemize}
-    \item The user interface shall be intuitive and require minimal training
-    \item All major functions shall be accessible within 3 clicks from the dashboard
-    \item The system shall provide contextual help and tooltips for complex features
-\end{itemize}
-
-\subsection{NFR3: Reliability}
-\begin{itemize}
-    \item The system shall gracefully handle scan failures without crashing
-    \item Failed scans shall provide informative error messages to users
-    \item The system shall maintain data integrity during concurrent operations
-\end{itemize}
-
-\subsection{NFR4: Scalability}
-\begin{itemize}
-    \item The system architecture shall support horizontal scaling of backend services
-    \item Database design shall accommodate growth to thousands of scan records
-    \item The frontend shall efficiently render large result sets through pagination
-\end{itemize}
-
-\subsection{NFR5: Security}
-\begin{itemize}
-    \item The system shall validate all user inputs to prevent injection attacks
-    \item API endpoints shall implement proper error handling without exposing sensitive information
-    \item Scan targets shall be validated to prevent unauthorized scanning
-\end{itemize}
-
-\subsection{NFR6: Maintainability}
-\begin{itemize}
-    \item Code shall follow established style guides and best practices
-    \item The system shall use modular architecture enabling component updates
-    \item Documentation shall be maintained for all major system components
-\end{itemize}
-
-\subsection{NFR7: Compatibility}
-\begin{itemize}
-    \item The web interface shall function correctly on modern browsers (Chrome, Firefox, Safari, Edge)
-    \item The system shall be deployable on Linux-based operating systems
-    \item Mobile responsiveness shall be supported for viewing results on tablets
-\end{itemize}
-
-\section{Software and Hardware Requirements}
-
-\subsection{Software Requirements}
-
-\subsubsection{Development Environment}
-\begin{itemize}
-    \item Node.js (v16 or higher) for frontend development
-    \item Python (v3.8 or higher) for backend development
-    \item Git for version control
-    \item Visual Studio Code or similar IDE
-\end{itemize}
-
-\subsubsection{Frontend Technologies}
-\begin{itemize}
-    \item React (v18) - Component-based UI framework
-    \item TypeScript - Type-safe JavaScript
-    \item Vite - Build tool and development server
+    \item React 18.x - UI component framework
+    \item TypeScript 4.x - Type-safe JavaScript
     \item TanStack Router - Client-side routing
-    \item Recharts - Data visualization library
-    \item Tailwind CSS - Utility-first CSS framework
+    \item Recharts - Data visualization
+    \item Axios - HTTP client
+    \item Tailwind CSS - Styling framework
 \end{itemize}
 
-\subsubsection{Backend Technologies}
+\subsection{Backend Dependencies}
 \begin{itemize}
-    \item Python FastAPI - High-performance web framework
-    \item PostgreSQL or SQLite - Database system
-    \item SQLAlchemy - ORM for database operations
+    \item FastAPI 0.95+ - Web framework
+    \item SQLAlchemy 2.x - Database ORM
     \item Uvicorn - ASGI server
+    \item Pydantic - Data validation
+    \item python-jose - JWT authentication
+    \item Alembic - Database migrations
 \end{itemize}
 
-\subsubsection{Security Tools}
+\subsection{Agent Dependencies}
 \begin{itemize}
-    \item Nmap (v7.80 or higher) - Network scanning
-    \item Masscan (latest version) - High-speed port scanning
-    \item Nikto (v2.1.6 or higher) - Web vulnerability scanning
+    \item Python 3.8+ (Windows compatible)
+    \item pywin32 - Windows API access
+    \item requests - HTTP client
+    \item schedule - Task scheduling
 \end{itemize}
 
-\subsection{Hardware Requirements}
+\section{Hardware Requirements}
 
-\subsubsection{Development System}
+\subsection{Development System}
 \begin{itemize}
-    \item Processor: Dual-core CPU (2.0 GHz or higher)
-    \item Memory: 8 GB RAM minimum
-    \item Storage: 20 GB available disk space
-    \item Network: Stable internet connection
+    \item CPU: Dual-core 2.0 GHz minimum
+    \item RAM: 8 GB minimum
+    \item Storage: 50 GB available space
+    \item Network: Standard ethernet connection
 \end{itemize}
 
-\subsubsection{Production Deployment}
+\subsection{Production Server}
 \begin{itemize}
-    \item Processor: Quad-core CPU (2.5 GHz or higher)
-    \item Memory: 16 GB RAM recommended
-    \item Storage: 50 GB SSD storage
-    \item Network: High-bandwidth connection for large-scale scanning
+    \item CPU: Quad-core 2.5 GHz recommended
+    \item RAM: 16 GB minimum, 32 GB recommended
+    \item Storage: 200 GB SSD for database and logs
+    \item Network: 1 Gbps network interface
 \end{itemize}
 
-\section{System Analysis}
+\subsection{Windows Agent (Per Endpoint)}
+\begin{itemize}
+    \item CPU: Minimal impact (<5\% CPU usage)
+    \item RAM: 100 MB footprint
+    \item Storage: 50 MB for agent and logs
+    \item Network: Standard network connectivity
+\end{itemize}
 
-\subsection{Use Case Analysis}
+\section{UML Diagrams}
 
-The primary use cases for Threat Sentinel encompass various security assessment scenarios:
+\subsection{Data Flow Diagram}
 
-\textbf{Use Case 1: Network Discovery}\\
-\textit{Actor:} Security Administrator\\
-\textit{Precondition:} User is authenticated and has network access\\
-\textit{Main Flow:}
-\begin{enumerate}
-    \item User navigates to Host Scan page
-    \item User enters target IP range (e.g., 192.168.1.0/24)
-    \item User configures scan options (timing, techniques)
-    \item User initiates scan
-    \item System executes Nmap scan
-    \item System displays discovered hosts in real-time
-    \item User reviews results and identifies active hosts
-\end{enumerate}
-\textit{Postcondition:} Scan results are stored in database
+Figure \ref{fig:dfd} illustrates how security event data flows through the SIREN system from collection to analyst presentation.
 
-\textbf{Use Case 2: Vulnerability Assessment}\\
-\textit{Actor:} Security Analyst\\
-\textit{Precondition:} Web server IP address is known\\
-\textit{Main Flow:}
-\begin{enumerate}
-    \item User navigates to Web Scan page
-    \item User enters target web server address
-    \item User initiates vulnerability scan
-    \item System executes Nikto scan
-    \item System processes and categorizes findings
-    \item User reviews identified vulnerabilities
-    \item User exports findings for remediation
-\end{enumerate}
-\textit{Postcondition:} Vulnerability report is generated
-
-% [DIAGRAM PLACEHOLDER: Use Case Diagram]
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{placeholder_usecase.png}
-\caption{Use Case Diagram showing primary system interactions}
+\begin{verbatim}
+  Windows                                    SIREN
+ Endpoints                              Backend Server              Web Browser
++---------+                           +-----------------+         +-----------+
+|         |                           |                 |         |           |
+| Python  |---(1) Events via HTTPS--->| FastAPI         |         | React     |
+| Agent   |                           | Event Receiver  |         | Dashboard |
+|         |                           |                 |         |           |
+| Monitors:|                          +--------+--------+         +-----+-----+
+| - Event  |                                   |                        ^
+|   Logs   |                                   v                        |
+| - Sysmon |                          +--------+--------+               |
+| - Apps   |                          | Correlation     |               |
++---------+                           | Engine          |               |
+                                      |                 |               |
+                                      | - Rule Matching |               |
+                                      | - Pattern Detect|               |
+                                      +--------+--------+               |
+                                               |                        |
+                                               v                        |
+                                      +--------+--------+               |
+                                      | Incident        |               |
+                                      | Generator       |               |
+                                      +--------+--------+               |
+                                               |                        |
+                                               v                        |
+                                      +--------+--------+               |
+                                      | PostgreSQL DB   |               |
+                                      | - Events        |               |
+                                      | - Incidents     |               |
+                                      | - Config        |               |
+                                      +--------+--------+               |
+                                               |                        |
+                                               v                        |
+                                      +--------+--------+               |
+                                      | Alert/Notify    |               |
+                                      | Service         |               |
+                                      +--------+--------+               |
+                                               |                        |
+        (2) Email/Webhook<--------------------+                        |
+                                                                        |
+        (3) Dashboard Query API ----------------------------------------+
+\end{verbatim}
+\caption{Data Flow Diagram showing event processing pipeline}
+\label{fig:dfd}
+\end{figure}
+
+\textbf{Data Flow Explanation:}
+
+\begin{enumerate}
+    \item \textbf{Event Collection:} Python agents on Windows endpoints continuously monitor security event sources and forward events to SIREN backend via HTTPS POST requests.
+    
+    \item \textbf{Event Processing:} The FastAPI Event Receiver validates and normalizes incoming events, storing them in PostgreSQL.
+    
+    \item \textbf{Correlation:} The Correlation Engine continuously evaluates events against configured rules, identifying patterns indicative of security incidents.
+    
+    \item \textbf{Incident Generation:} When correlation rules match, the Incident Generator creates incident records with severity, classification, and affected assets.
+    
+    \item \textbf{Alert Notification:} The Alert Service sends notifications through configured channels (email, webhook) for high-severity incidents.
+    
+    \item \textbf{Dashboard Presentation:} React frontend queries the API to retrieve and display incidents, events, and system metrics in real-time.
+\end{enumerate}
+
+\subsection{Use Case Diagram}
+
+Figure \ref{fig:usecase} depicts primary user interactions with the SIREN system.
+
+\begin{figure}[H]
+\centering
+\begin{verbatim}
+                                    SIREN System
+                      +---------------------------------------+
+                      |                                       |
+     SOC Analyst      |   [View Dashboard]                    |
+         o            |         |                             |
+        /|\           |         v                             |
+        / \           |   [Investigate Incident]              |
+         |----------->|         |                             |
+         |            |         +--->[View Event Timeline]    |
+         |            |         |                             |
+         |            |         +--->[Document Findings]      |
+         |            |         |                             |
+         |            |         +--->[Update Status]          |
+         |            |                                       |
+         |            |   [Generate Report]                   |
+         |----------->|                                       |
+         |            |                                       |
+         |            |   [Configure Correlation Rules]       |
+         +----------->|         |                             |
+                      |         v                             |
+   Administrator      |   [Manage Users]                      |
+         o            |                                       |
+        /|\           |   [Configure Alerts]                  |
+        / \           |         |                             |
+         +----------->|         +--->[Email Settings]         |
+         |            |         |                             |
+         |            |         +--->[Webhook Settings]       |
+                      |                                       |
+  Windows Agent       |   [Send Events]                       |
+     (System)         |         |                             |
+         |            |         v                             |
+         +----------->|   [Receive Events]                    |
+                      |         |                             |
+                      |         v                             |
+                      |   [Correlate & Alert]                 |
+                      |                                       |
+                      +---------------------------------------+
+\end{verbatim}
+\caption{Use Case Diagram showing actor interactions}
 \label{fig:usecase}
 \end{figure}
 
-The use case diagram (Figure \ref{fig:usecase}) illustrates the primary interactions between users and the system. The main actor, Security Professional, can perform host scanning, port scanning, web vulnerability scanning, and access dashboard visualizations. Each use case represents a discrete workflow that delivers value to the user. The diagram shows how different scanning functions can extend basic scan functionality, promoting code reuse and consistent user experience across scan types.
+\textbf{Use Case Explanation:}
 
-\subsection{Data Flow Analysis}
+\textbf{SOC Analyst Use Cases:}
+\begin{itemize}
+    \item \textbf{View Dashboard:} Displays real-time security status, active incidents, and recent events.
+    \item \textbf{Investigate Incident:} Drill into specific incidents to view correlated events, timeline, and affected assets.
+    \item \textbf{Generate Report:} Export incident documentation for compliance or communication purposes.
+\end{itemize}
 
-Understanding data flow through the system is critical for effective architecture design. The following diagrams illustrate data movement at different abstraction levels.
+\textbf{Administrator Use Cases:}
+\begin{itemize}
+    \item \textbf{Configure Correlation Rules:} Define patterns that trigger incident generation.
+    \item \textbf{Manage Users:} Create, modify, and disable user accounts with appropriate permissions.
+    \item \textbf{Configure Alerts:} Set up email and webhook notification channels.
+\end{itemize}
 
-% [DIAGRAM PLACEHOLDER: DFD Level 0]
+\textbf{System Actor (Windows Agent):}
+\begin{itemize}
+    \item \textbf{Send Events:} Automated process forwarding security events to SIREN backend.
+\end{itemize}
+
+\subsection{Activity Diagram}
+
+Figure \ref{fig:activity} illustrates the workflow for incident detection and response.
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{placeholder_dfd0.png}
-\caption{Data Flow Diagram - Level 0 (Context Diagram)}
-\label{fig:dfd0}
+\begin{verbatim}
+                        [Start: Event Occurs on Endpoint]
+                                      |
+                                      v
+                        +------------------------+
+                        | Agent Captures Event   |
+                        +------------------------+
+                                      |
+                                      v
+                        +------------------------+
+                        | Filter Event Locally   |
+                        +------------------------+
+                                      |
+                          +-----------+-----------+
+                          |                       |
+                      [Relevant?]             [Not Relevant]
+                          |                       |
+                          v                       v
+                    +-------------+          [Discard]
+                    | Send to     |
+                    | SIREN API   |
+                    +-------------+
+                          |
+                          v
+                    +-------------+
+                    | Normalize & |
+                    | Store Event |
+                    +-------------+
+                          |
+                          v
+                    +-------------+
+                    | Run Rules   |
+                    | Engine      |
+                    +-------------+
+                          |
+              +-----------+-----------+
+              |                       |
+        [Rule Match]            [No Match]
+              |                       |
+              v                       v
+        +-------------+         [Continue
+        | Generate    |          Monitoring]
+        | Incident    |
+        +-------------+
+              |
+              v
+        +-------------+
+        | Determine   |
+        | Severity    |
+        +-------------+
+              |
+        +-----+-----+
+        |           |
+    [High/     [Medium/
+     Critical]  Low]
+        |           |
+        v           v
+    +-------+   +-------+
+    | Send  |   | Log   |
+    | Alert |   | Only  |
+    +-------+   +-------+
+        |           |
+        +-----------+
+              |
+              v
+        +-------------+
+        | Analyst     |
+        | Investigates|
+        +-------------+
+              |
+              v
+        +-------------+
+        | Document &  |
+        | Resolve     |
+        +-------------+
+              |
+              v
+        [End: Incident Closed]
+\end{verbatim}
+\caption{Activity Diagram for incident detection and response workflow}
+\label{fig:activity}
 \end{figure}
 
-The Level 0 DFD (Figure \ref{fig:dfd0}) provides a context-level view of the entire system. The Security Professional (external entity) interacts with the Threat Sentinel system by providing scan configurations and receiving scan results and visualizations. The system interfaces with Network Infrastructure (the targets being scanned) to gather security information. This high-level view establishes the system boundary and key external interactions.
-
-% [DIAGRAM PLACEHOLDER: DFD Level 1]
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{placeholder_dfd1.png}
-\caption{Data Flow Diagram - Level 1 (Major Processes)}
-\label{fig:dfd1}
-\end{figure}
-
-The Level 1 DFD (Figure \ref{fig:dfd1}) decomposes the system into major processes:
+\textbf{Activity Flow Explanation:}
 
 \begin{enumerate}
-    \item \textbf{Scan Configuration Process:} Accepts user inputs and validates scan parameters before queuing scans.
+    \item \textbf{Event Capture:} Windows agent detects security event (login attempt, file access, process execution).
     
-    \item \textbf{Scan Execution Process:} Orchestrates security tool execution (Nmap, Masscan, Nikto), manages scan lifecycle, and handles errors.
+    \item \textbf{Local Filtering:} Agent applies basic filters to reduce network traffic by discarding obviously benign events.
     
-    \item \textbf{Result Processing Process:} Parses raw tool output, normalizes data formats, and stores results in the database.
+    \item \textbf{Event Transmission:} Relevant events are sent to SIREN backend via authenticated API call.
     
-    \item \textbf{Visualization Process:} Retrieves scan data, performs aggregations, and generates dashboard visualizations.
+    \item \textbf{Normalization:} Events are normalized into standard schema and stored in database.
+    
+    \item \textbf{Rule Evaluation:} Correlation engine evaluates events against configured detection rules.
+    
+    \item \textbf{Incident Generation:} When rules match (e.g., 5 failed logins in 2 minutes), an incident is created.
+    
+    \item \textbf{Severity Classification:} Incident severity is determined based on rule configuration and event characteristics.
+    
+    \item \textbf{Alert Distribution:} High-severity incidents trigger immediate alerts to SOC analysts.
+    
+    \item \textbf{Investigation:} Analysts review incidents, examine correlated events, and determine appropriate response.
+    
+    \item \textbf{Resolution:} Incident is documented and marked as resolved after containment and remediation.
 \end{enumerate}
 
-Data stores include the Scan Database (persistent storage for all scan data) and Configuration Store (system and user preferences). This decomposition reveals the logical flow of information from user input through scan execution to result presentation.
+\section{Tools Used}
 
-\subsection{System Breakdown}
-
-The system is architecturally divided into three primary tiers:
-
-\subsubsection{Presentation Layer (Frontend)}
+\subsection{Development Tools}
 \begin{itemize}
-    \item Dashboard Component: Main entry point displaying summary statistics
-    \item Host Scan Component: Interface for network discovery
-    \item Port Scan Component: Interface for port enumeration
-    \item Web Scan Component: Interface for vulnerability scanning
-    \item Results Display Components: Tables, charts, and visualizations
-    \item Routing and Navigation: Application workflow management
+    \item \textbf{Visual Studio Code:} Primary IDE for both frontend and backend development
+    \item \textbf{Git:} Version control and collaborative development
+    \item \textbf{Postman:} API testing and documentation
+    \item \textbf{pgAdmin:} PostgreSQL database administration
+    \item \textbf{Chrome DevTools:} Frontend debugging and performance analysis
 \end{itemize}
 
-\subsubsection{Application Layer (Backend API)}
+\subsection{Testing Tools}
 \begin{itemize}
-    \item API Endpoints: RESTful interfaces for all system operations
-    \item Scan Orchestration: Management of security tool execution
-    \item Data Processing: Parsing and normalization of scan results
-    \item Business Logic: Implementation of system rules and workflows
-    \item Error Handling: Graceful failure management
+    \item \textbf{Jest:} Frontend component and unit testing
+    \item \textbf{pytest:} Backend unit and integration testing
+    \item \textbf{React Testing Library:} UI component testing
+    \item \textbf{Locust:} Performance and load testing
 \end{itemize}
 
-\subsubsection{Data Layer}
+\subsection{Deployment Tools}
 \begin{itemize}
-    \item Database Schema: Structured storage for scans, hosts, services, vulnerabilities
-    \item ORM Models: Python object representations of data entities
-    \item Query Optimization: Efficient data retrieval patterns
+    \item \textbf{Docker:} Containerization for consistent deployment
+    \item \textbf{Docker Compose:} Multi-container orchestration
+    \item \textbf{Nginx:} Reverse proxy and static file serving
 \end{itemize}
 
-% [DIAGRAM PLACEHOLDER: Additional UML Diagram]
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{placeholder_component.png}
-\caption{Component Diagram showing system architecture}
-\label{fig:component}
-\end{figure}
+\section{Code of Ethics}
 
-The component diagram (Figure \ref{fig:component}) illustrates how major system components interact. The React Frontend communicates with the FastAPI Backend through REST API calls. The backend orchestrates security scanning tools (Nmap, Masscan, Nikto) and manages data persistence through the Database layer. This architecture promotes separation of concerns, enabling independent development and testing of each layer while maintaining clear interfaces between components.
+The development and deployment of security incident management systems raises important ethical considerations that have been carefully addressed throughout this project.
 
-\section{Evaluation Criteria}
+\subsection{Privacy and Data Protection}
 
-Success of the Threat Sentinel system will be measured against the following criteria:
+Security event data often contains sensitive information about user activities, system configurations, and organizational infrastructure. This project adheres to principles of data minimization and purpose limitation:
 
-\subsection{Functional Completeness}
 \begin{itemize}
-    \item All functional requirements (FR1-FR10) are fully implemented
-    \item Each scanning tool integration works correctly
-    \item Dashboard accurately reflects scan data
+    \item Only security-relevant events are collected, avoiding unnecessary personal data capture
+    \item Data retention policies limit storage duration to operational necessity
+    \item Access controls ensure only authorized personnel can view sensitive event data
+    \item Incident reports can be anonymized when shared outside immediate security teams
 \end{itemize}
 
-\subsection{Performance Metrics}
+\subsection{Transparency and Accountability}
+
+Users and administrators must understand how SIREN operates:
+
 \begin{itemize}
-    \item Scan completion time within acceptable ranges
-    \item Dashboard load time under 3 seconds
-    \item Real-time update latency under 1 second
+    \item Correlation rules are explicit and documented, not opaque algorithmic decisions
+    \item Audit logs track all system activities including user actions and automated processes
+    \item Incident generation rationale is clearly presented, showing which events triggered which rules
+    \item System limitations are documented honestly without overstating detection capabilities
 \end{itemize}
 
-\subsection{Usability Assessment}
+\subsection{Security by Design}
+
+The system itself must exemplify security best practices:
+
 \begin{itemize}
-    \item Users can complete common tasks (initiate scan, view results) without assistance
-    \item Interface receives positive feedback on aesthetics and intuitiveness
-    \item Error messages are clear and actionable
+    \item Secure coding practices prevent common vulnerabilities (SQL injection, XSS, CSRF)
+    \item Authentication and authorization protect against unauthorized access
+    \item Encryption protects data in transit and sensitive data at rest
+    \item Regular security testing identifies and addresses potential weaknesses
 \end{itemize}
 
-\subsection{Code Quality}
+\subsection{Responsible Disclosure}
+
+Any vulnerabilities discovered during development have been:
+
 \begin{itemize}
-    \item Code passes linting checks with no critical issues
-    \item TypeScript types are comprehensive with minimal use of 'any'
-    \item Functions and components follow single responsibility principle
+    \item Documented and addressed before deployment
+    \item Reported to relevant parties when affecting third-party dependencies
+    \item Never exploited or disclosed publicly without appropriate timeline for remediation
 \end{itemize}
 
-\subsection{Integration Success}
+\subsection{Avoid Harm}
+
+Security tools can be misused for surveillance or oppression. This project includes safeguards:
+
 \begin{itemize}
-    \item Security tools execute correctly from backend
-    \item Results from all tools are properly parsed and stored
-    \item Frontend-backend communication is reliable
+    \item Documentation emphasizes lawful and ethical use within appropriate organizational context
+    \item No capabilities designed specifically for mass surveillance or privacy invasion
+    \item Open-source nature enables audit and verification of functionality
+    \item User authentication and audit logging create accountability for system use
 \end{itemize}
 
-\section{Code of Ethics, Legal, and Social Issues}
+\subsection{Professional Responsibility}
 
-\subsection{Ethical Considerations}
+Development adhered to professional engineering principles:
 
-The development and deployment of cybersecurity scanning tools raises significant ethical concerns that must be carefully addressed:
+\begin{itemize}
+    \item Honest representation of system capabilities and limitations
+    \item Acknowledgment of existing work and proper attribution
+    \item Comprehensive testing before deployment
+    \item Clear documentation for users and maintainers
+    \item Commitment to addressing discovered issues responsibly
+\end{itemize}
 
-\textbf{Authorized Use:} Network scanning tools can be misused for unauthorized reconnaissance of systems. This project includes clear documentation emphasizing that Threat Sentinel must only be used against networks and systems for which the user has explicit authorization. Unauthorized scanning is illegal in most jurisdictions and violates ethical principles of cybersecurity practice.
-
-\textbf{Responsible Disclosure:} When vulnerabilities are discovered, users have an ethical obligation to report them responsibly to system owners rather than exploiting them or disclosing them publicly without allowing time for remediation.
-
-\textbf{Privacy:} Network scanning may reveal information about systems and services that their operators consider private. Users must respect privacy expectations and limit scanning to professional, legitimate purposes.
-
-\subsection{Legal Considerations}
-
-\textbf{Computer Misuse Laws:} Many countries have laws prohibiting unauthorized access to computer systems. In the UK, the Computer Misuse Act 1990 specifically criminalizes unauthorized access. Users must ensure they have proper authorization before scanning any network infrastructure.
-
-\textbf{Data Protection:} Scan results may contain personally identifiable information or sensitive business data. Storage and handling of such data must comply with relevant data protection regulations (GDPR in EU, similar regulations elsewhere).
-
-\textbf{License Compliance:} This project integrates several open-source security tools (Nmap, Masscan, Nikto), each with specific license terms. All licenses have been reviewed for compliance, and the project adheres to their requirements.
-
-\subsection{Social Implications}
-
-\textbf{Security Awareness:} By making advanced security scanning more accessible, this project contributes to raising security awareness among organizations that might otherwise lack such capabilities.
-
-\textbf{Dual-Use Technology:} Like all security tools, Threat Sentinel has dual-use potential—it can be used for legitimate security assessment or for malicious reconnaissance. This reality necessitates clear usage guidelines and education about responsible use.
-
-\textbf{Digital Divide:} Providing free, open-source security tools helps reduce the security capability gap between well-resourced and under-resourced organizations, contributing to overall improvement in cybersecurity posture across the technology ecosystem.
-
-\section{Summary}
-
-This chapter has established comprehensive requirements for Threat Sentinel, covering functional capabilities, quality attributes, and technical prerequisites. The system analysis through use cases and data flow diagrams provides a clear understanding of how the system operates and how information moves through its components. Evaluation criteria establish measurable goals for assessing project success. Finally, the ethical, legal, and social considerations section acknowledges the responsibilities inherent in developing security tools and establishes principles for their appropriate use.
-
-The following chapter details how these requirements inform the system design and implementation approach.
+The ethical framework guiding this project recognizes that security tools exist within broader social and legal contexts. SIREN is designed to enhance legitimate organizational security while respecting individual privacy, maintaining transparency, and enabling accountability. These ethical considerations are not afterthoughts but foundational principles integrated throughout the design, implementation, and deployment processes.

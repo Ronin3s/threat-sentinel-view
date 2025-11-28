@@ -21,6 +21,7 @@
 \usepackage{amsmath}         % For math symbols
 \usepackage{listings}        % For code listings
 \usepackage{xcolor}          % For colors
+\usepackage{verbatim}        % For verbatim environment (ASCII diagrams)
 
 % Page geometry
 \geometry{
@@ -92,7 +93,7 @@
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
-% Chapters
+% Chapters - Complete TM471 structure
 \input{chapters/chapter1}
 \clearpage
 
@@ -111,13 +112,17 @@
 \input{chapters/chapter6}
 \clearpage
 
+% Conclusion
+\input{chapters/conclusion}
+\clearpage
+
 % References
 \bibliographystyle{agsm}  % Harvard style
 \bibliography{references}
 \clearpage
 
-% Appendices
-\appendix
-\input{appendices/appendixA}
+% Appendices (optional)
+% \appendix
+% \input{appendices/appendixA}
 
 \end{document}

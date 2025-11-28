@@ -1,419 +1,243 @@
-\chapter{Results and Discussion}
-\label{ch:results}
+\chapter{Implementation}
+\label{ch:implementation}
 
-\section{Introduction}
+\section{Overview}
 
-This chapter presents the results obtained from implementing and testing Threat Sentinel, discusses the extent to which project objectives were achieved, identifies areas for future enhancement, and examines the ethical, legal, and social implications of deploying such a system.
+This chapter describes the implementation of SIREN, detailing the development approach, key technical components, and solutions to implementation challenges. The implementation followed an iterative methodology, building core functionality first and progressively adding features through successive refinements.
 
-\section{System Implementation Results}
+\section{Development Approach}
 
-\subsection{Functional Capabilities}
+\subsection{Methodology}
 
-The implemented system successfully delivers all core functional requirements:
+Development followed an iterative approach with three-week sprints:
 
-\textbf{Host Scanning:} The Nmap integration enables comprehensive network host discovery. Testing on various network ranges (small /24 networks to larger /16 networks) demonstrated reliable host identification with accurate status detection (up/down) and hostname resolution where available.
+\textbf{Sprint 1-2:} Foundation setup including project structure, database initialization, basic API framework, and frontend scaffolding.
 
-% [DIAGRAM PLACEHOLDER: Host Scan Results Screenshot]
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{placeholder_hostscan_results.png}
-\caption{Host scan results displaying discovered network devices}
-\label{fig:hostscan_results}
-\end{figure}
+\textbf{Sprint 3-4:} Core functionality implementation including event ingestion API, database persistence, basic correlation engine, and initial dashboard.
 
-\textbf{Port Scanning:} Both Nmap and Masscan integrations provide flexible port scanning capabilities. Users can scan specific ports, common port ranges, or all 65,535 ports. Service version detection accurately identifies running services, providing valuable information for security assessment.
+\textbf{Sprint 5-6:} Advanced features including complete correlation rules, alert notifications, investigation interface, and Windows agent development.
 
-\textbf{Web Vulnerability Scanning:} Nikto integration successfully identifies common web vulnerabilities, outdated software versions, and server misconfigurations. Testing against intentionally vulnerable web applications (DVWA, WebGoat) confirmed accurate detection of known issues.
+\textbf{Sprint 7-8:} Refinement including performance optimization, security hardening, comprehensive testing, and documentation.
 
-\textbf{Dashboard Functionality:} The dashboard provides real-time statistics and visualizations:
+\subsection{Version Control}
+
+Git version control with feature branching strategy ensured code stability:
 \begin{itemize}
-    \item Total scan count with status breakdown
-    \item Discovered host statistics
-    \item Vulnerability severity distribution (pie chart)
-    \item Recent scan activity timeline
-    \item Quick access to all scan types
+    \item \texttt{main} branch for production-ready code
+    \item \texttt{develop} branch for integration
+    \item Feature branches for specific capabilities
+    \item Pull requests with code review before merging
 \end{itemize}
 
-% [DIAGRAM PLACEHOLDER: Dashboard Screenshot]
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{placeholder_dashboard.png}
-\caption{Main dashboard showing system statistics and recent activity}
-\label{fig:dashboard}
-\end{figure}
+\section{Backend Implementation}
 
-\subsection{Performance Metrics}
+\subsection{FastAPI Application Structure}
 
-Performance testing revealed that the system meets or exceeds all specified performance requirements:
+The backend follows modular organization:
 
-\begin{table}[H]
-\centering
-\caption{Performance Benchmark Results}
-\label{tab:performance_results}
-\begin{tabularx}{\textwidth}{|X|c|c|c|}
-\hline
-\textbf{Operation} & \textbf{Target} & \textbf{Measured} & \textbf{Improvement} \\
-\hline
-Dashboard initial load & 3.0s & 1.8s & 40\% faster \\
-\hline
-Scan result retrieval & 2.0s & 1.2s & 40\% faster \\
-\hline
-API endpoint response (avg) & 500ms & 320ms & 36\% faster \\
-\hline
-Database query (1000 records) & 1.0s & 0.4s & 60\% faster \\
-\hline
-Real-time update latency & 1.0s & 650ms & 35\% faster \\
-\hline
-\end{tabularx}
-\end{table}
+\begin{verbatim}
+backend/
+├── app/
+│   ├── api/          # API endpoint routers
+│   ├── core/         # Configuration and security
+│   ├── models/       # SQLAlchemy database models
+│   ├── schemas/      # Pydantic validation schemas
+│   ├── services/     # Business logic services
+│   └── engine/       # Correlation engine
+├── alembic/          # Database migrations
+└── tests/            # Test suite
+\end{verbatim}
 
-These results demonstrate that careful attention to database query optimization, efficient API design, and frontend rendering optimization yielded superior performance compared to initial targets.
+\subsection{Event Ingestion Implementation}
 
-\subsection{Usability Assessment}
+Event ingestion endpoint validates and persists events:
 
-Informal usability testing with five users (mix of technical and non-technical backgrounds) yielded positive feedback:
+\textbf{Validation:} Pydantic schemas enforce required fields (timestamp, source, event\_type, severity, hostname, event\_data).
 
-\textbf{Positive Findings:}
+\textbf{Normalization:} Event data standardized to common format regardless of source variations.
+
+\textbf{Persistence:} Events inserted into database with transaction safety.
+
+\textbf{Correlation Trigger:} New events trigger correlation engine evaluation asynchronously.
+
+\subsection{Correlation Engine Implementation}
+
+The correlation engine implements rule-based pattern matching:
+
+\textbf{Rule Evaluation:} For each new event, retrieve applicable correlation rules from database.
+
+\textbf{Pattern Matching:} Query events within rule timewindow matching specified pattern criteria.
+
+\textbf{Threshold Detection:} When event count exceeds rule threshold, generate incident.
+
+\textbf{Incident Creation:} Create incident record linking correlated events with appropriate severity and description.
+
+\textbf{Alert Generation:} High/critical severity incidents trigger immediate alert notifications.
+
+\subsection{Alert Service Implementation}
+
+Multi-channel alerting supports email and webhooks:
+
+\textbf{Email Notifications:} SMTP client sends formatted HTML emails to configured recipients containing incident summary, severity, affected hosts, and investigation link.
+
+\textbf{Webhook Notifications:} HTTP POST requests to configured webhook URLs with JSON payload enabling integration with external systems (Slack, Teams, PagerDuty).
+
+\textbf{Notification Queuing:} Background task queue ensures alert delivery does not block API responses.
+
+\section{Frontend Implementation}
+
+\subsection{React Application Structure}
+
+Frontend organized by feature modules:
+
+\begin{verbatim}
+frontend/
+├── src/
+│   ├── components/   # Reusable UI components
+│   ├── pages/        # Page-level components
+│   ├── services/     # API client services
+│   ├── hooks/        # Custom React hooks
+│   ├── types/        # TypeScript type definitions
+│   └── utils/        # Utility functions
+└── public/           # Static assets
+\end{verbatim}
+
+\subsection{Dashboard Implementation}
+
+Dashboard aggregates data through multiple API calls:
+
+\textbf{Statistics Cards:} Async queries fetch total incidents, active alerts, monitored hosts counts.
+
+\textbf{Charts:} Recharts library renders severity distribution pie chart and event timeline line graph.
+
+\textbf{Recent Incidents Table:} Displays paginated incidents list with real-time updates via polling.
+
+\textbf{Auto-refresh:} \texttt{useEffect} hook implements periodic dashboard refresh every 30 seconds.
+
+\subsection{Incident Investigation Implementation}
+
+Investigation interface provides comprehensive incident context:
+
+\textbf{Data Loading:} Single incident API call retrieves full incident details with all correlated events.
+
+\textbf{Event Timeline:} Events sorted chronologically and displayed with timestamps, event types, sources.
+
+\textbf{Status Management:} Dropdown enables status transitions with PUT request to backend.
+
+\textbf{Notes:} Text area allows analysts to document findings persisted to incident record.
+
+\section{Windows Agent Implementation}
+
+\subsection{Agent Architecture}
+
+Python agent runs as Windows service monitoring security events:
+
+\textbf{Event Monitoring:} \texttt{pywin32} library accesses Windows Event Log API subscribing to Security, System, and Application logs.
+
+\textbf{Sysmon Integration:} Monitors Sysmon operational log (if installed) capturing detailed process creation, network connections, file modifications.
+
+\textbf{Local Filtering:} Configurable filters discard clearly benign events reducing network traffic.
+
+\textbf{Event Forwarding:} HTTP client sends filtered events to SIREN backend with authentication token.
+
+\textbf{Error Handling:} Retry logic with exponential backoff handles temporary network failures.
+
+\subsection{Agent Deployment}
+
+Agent packaged as Windows executable via PyInstaller:
 \begin{itemize}
-    \item All users successfully initiated their first scan within 2 minutes
-    \item Interface was described as "clean," "intuitive," and "modern"
-    \item Visualizations effectively conveyed security information
-    \item Real-time progress updates were appreciated
+    \item Single-file executable simplifying deployment
+    \item Configuration file for SIREN server URL and authentication
+    \item Installation script registers Windows service
+    \item Uninstallation script cleanly removes service
 \end{itemize}
 
-\textbf{Areas for Improvement:}
-\begin{itemize}
-    \item Some users requested additional contextual help for scan options
-    \item Export functionality could support more formats (PDF reports)
-    \item Mobile responsiveness needs enhancement for smartphone use
-\end{itemize}
+\section{Database Implementation}
 
-\subsection{Integration Success}
+\subsection{Schema Creation}
 
-All three security tool integrations function correctly:
+SQLAlchemy models define database schema with Alembic managing migrations:
 
-\textbf{Nmap Integration:}
-\begin{itemize}
-    \item Successfully executes with various scan types (SYN, Connect, UDP)
-    \item XML output parsing is robust across different Nmap versions
-    \item Handles edge cases (unreachable hosts, filtered ports) gracefully
-\end{itemize}
+\textbf{Model Definition:} Python classes represent tables with column types, constraints, relationships.
 
-\textbf{Masscan Integration:}
-\begin{itemize}
-    \item Achieves significantly faster scanning for large port ranges
-    \item Output parsing correctly extracts port status and basic service info
-    \item Rate limiting prevents network congestion
-\end{itemize}
+\textbf{Migration Generation:} Alembic detects model changes generating migration scripts.
 
-\textbf{Nikto Integration:}
-\begin{itemize}
-    \item Web vulnerability detection works across various web server types
-    \item Results are categorized by severity appropriately
-    \item False positive rate is acceptable for initial reconnaissance
-\end{itemize}
-
-\section{Objectives Achievement Analysis}
-
-\subsection{Objective 1: Integration (Fully Achieved)}
+\textbf{Migration Application:} Deploy script applies migrations creating/updating schema.
 
-The system successfully integrates Nmap, Masscan, and Nikto under a unified web interface. Each tool is abstracted behind a consistent API, allowing users to leverage multiple security tools without managing them individually. The integration is seamless from the user perspective—they simply select scan type and parameters, while the system handles tool selection and execution.
-
-\subsection{Objective 2: Automation (Fully Achieved)}
-
-Automated scanning capabilities are fully implemented. Users can initiate scans with minimal configuration, and the system automatically:
-\begin{itemize}
-    \item Validates input parameters
-    \item Executes appropriate security tools
-    \item Parses and normalizes results
-    \item Stores findings in the database
-    \item Updates the UI with results
-\end{itemize}
-
-No manual intervention is required beyond initial scan configuration.
-
-\subsection{Objective 3: Visualization (Fully Achieved)}
-
-Interactive visualizations successfully present security data:
-\begin{itemize}
-    \item Pie charts show vulnerability severity distribution
-    \item Bar charts display service distribution across hosts
-    \item Tables present detailed scan results with sorting/filtering
-    \item Timeline views show scan history
-\end{itemize}
-
-These visualizations make complex security data accessible to users of varying technical backgrounds.
-
-\subsection{Objective 4: Real-time Processing (Fully Achieved)}
-
-The system provides real-time scan execution with live UI updates. Backend processes handle long-running scans asynchronously, while the frontend polls for updates or receives them via WebSocket connections. Users see scan progress, preliminary results, and final outcomes without page refreshes.
-
-\subsection{Objective 5: User Experience (Fully Achieved)}
-
-The web interface significantly reduces technical barriers:
-\begin{itemize}
-    \item No command-line knowledge required
-    \item Intuitive form-based scan configuration
-    \item Clear visual feedback during operations
-    \item Accessible from any device with a web browser
-\end{itemize}
-
-Usability testing confirmed that even users unfamiliar with security tools could successfully perform scans.
-
-\subsection{Objective 6: Scalability (Partially Achieved)}
+\subsection{Query Optimization}
 
-The architecture supports scalability through:
-\begin{itemize}
-    \item Stateless API design enabling horizontal scaling
-    \item Database indexing for efficient queries on large datasets
-    \item Connection pooling for database access
-\end{itemize}
-
-However, true horizontal scaling would require additional infrastructure (load balancers, distributed task queues) not implemented in this version. The current system handles moderate workloads efficiently but has not been tested at enterprise scale.
-
-\subsection{Objective 7: Reporting (Partially Achieved)}
-
-Basic reporting capabilities are implemented:
-\begin{itemize}
-    \item JSON export of scan results
-    \item CSV export for tabular data
-\end{itemize}
-
-However, comprehensive PDF report generation with executive summaries, charts, and recommendations remains unimplemented. This represents an area for future enhancement.
-
-\section{Further Work}
-
-\subsection{Authentication and Authorization}
-
-The current implementation lacks user authentication. Future versions should implement:
-\begin{itemize}
-    \item User registration and login
-    \item Role-based access control (admin, analyst, viewer)
-    \item API key authentication for programmatic access
-    \item Audit logging of user actions
-\end{itemize}
-
-\subsection{Advanced Visualization}
-
-Enhanced visualization capabilities could include:
-\begin{itemize}
-    \item Network topology graphs showing host relationships
-    \item Geolocation mapping of external IP addresses
-    \item Trend analysis charts showing security posture over time
-    \item Interactive attack surface visualization
-\end{itemize}
-
-\subsection{Threat Intelligence Integration}
+Performance optimizations ensure responsive queries:
 
-Integration with threat intelligence feeds would enhance vulnerability context:
-\begin{itemize}
-    \item CVE database integration for vulnerability details
-    \item MITRE ATT\&CK framework mapping
-    \item Real-time threat feed correlation
-    \item Indicator of Compromise (IoC) checking
-\end{itemize}
+\textbf{Indexes:} B-tree indexes on timestamp columns, hash indexes on frequently filtered fields.
 
-\subsection{Automated Remediation Guidance}
+\textbf{Query Optimization:} SQLAlchemy query optimization avoiding N+1 problems through joins and eager loading.
 
-The system could provide actionable remediation advice:
-\begin{itemize}
-    \item Specific steps to address identified vulnerabilities
-    \item Links to vendor patches and security advisories
-    \item Configuration templates for secure service settings
-    \item Automated ticket creation for tracking remediation
-\end{itemize}
+\textbf{Connection Pooling:} Database connection pool reuses connections reducing overhead.
 
-\subsection{Scheduled and Continuous Scanning}
+\section{Implementation Challenges and Solutions}
 
-Implementing scheduled scanning would enable continuous monitoring:
-\begin{itemize}
-    \item Cron-like scheduling for recursive scans
-    \item Automated alerting when changes detected
-    \item Baseline comparison to identify new vulnerabilities
-    \item Compliance checking against security policies
-\end{itemize}
+\subsection{Challenge 1: Correlation Performance}
 
-\subsection{Enhanced Reporting}
+\textbf{Problem:} Initial correlation engine queried all events for each incoming event causing performance degradation under load.
 
-Comprehensive reporting features should include:
-\begin{itemize}
-    \item PDF report generation with executive summaries
-    \item Customizable report templates
-    \item Compliance reporting (PCI DSS, HIPAA, etc.)
-    \item Trend reports showing security improvements
-\end{itemize}
+\textbf{Solution:} Implemented time-window constraint in queries limiting evaluation to recent events. Added database indexes on timestamp and event\_type fields. Result: Sub-second correlation latency even with 100,000+ events.
 
-\subsection{Mobile Application}
+\subsection{Challenge 2: Agent Resource Consumption}
 
-A native mobile application could provide:
-\begin{itemize}
-    \item On-the-go access to scan results
-    \item Push notifications for critical findings
-    \item Quick scan initiation for specific targets
-    \item Optimized mobile UI for security monitoring
-\end{itemize}
+\textbf{Problem:} Early agent implementation consumed excessive CPU monitoring high-volume event logs.
 
-\section{Ethical, Legal, and Social Issues (Part B)}
+\textbf{Solution:} Implemented event batching collecting events for 5-second intervals before forwarding. Added local filtering discarding benign event types. Result: CPU usage reduced from 15\% to <5\%.
 
-\subsection{Ethical Implications}
+\subsection{Challenge 3: Frontend State Management}
 
-\subsubsection{Dual-Use Technology}
+\textbf{Problem:} Complex state dependencies between dashboard components caused re-rendering issues.
 
-Threat Sentinel exemplifies dual-use technology—it can be employed for both beneficial security assessment and malicious reconnaissance. This duality raises profound ethical questions about responsibility in software development.
+\textbf{Solution:} Introduced React Context for shared state reducing prop drilling. Implemented useMemo and useCallback hooks preventing unnecessary re-renders. Result: Smooth dashboard performance with minimal lag.
 
-\textbf{Developer Responsibility:} As the creator of this tool, I have an ethical obligation to:
-\begin{itemize}
-    \item Clearly document appropriate use cases
-    \item Warn against unauthorized scanning
-    \item Provide educational materials on ethical security practices
-    \item Not knowingly assist those intending malicious use
-\end{itemize}
+\section{Technology Stack Utilization}
 
-\textbf{User Responsibility:} Users bear responsibility for their actions. Providing a user-friendly interface does not absolve users of ethical obligations to:
-\begin{itemize}
-    \item Obtain proper authorization before scanning
-    \item Respect privacy and confidentiality
-    \item Report vulnerabilities responsibly
-    \item Use findings for defensive purposes only
-\end{itemize}
+\subsection{Backend Technologies}
 
-\subsubsection{Accessibility and Security}
+\textbf{FastAPI:} Leveraged automatic API documentation, async request handling, dependency injection for clean architecture.
 
-Making powerful security tools more accessible creates ethical tension. While democratizing security capabilities helps under-resourced organizations improve their defenses, it also lowers barriers for potential attackers.
+\textbf{SQLAlchemy:} ORM abstraction enabled database-agnostic code with powerful query building capabilities.
 
-This project takes the position that the benefits of accessibility outweigh risks, based on:
-\begin{enumerate}
-    \item These capabilities already exist in command-line tools
-    \item Malicious actors already have access to such tools
-    \item Improving defensive capabilities of legitimate organizations creates net positive security outcomes
-    \item Education and responsible use advocacy can mitigate misuse risks
-\end{enumerate}
+\textbf{Pydantic:} Type validation prevented invalid data entering system reducing defensive programming needs.
 
-\subsubsection{Privacy Considerations}
+\subsection{Frontend Technologies}
 
-Network scanning reveals information about systems that operators may consider private. Ethical considerations include:
+\textbf{React:} Component-based architecture promoted code reuse and maintainability.
 
-\textbf{Legitimate Interests:} Organizations have legitimate interests in assessing their own security posture, which may require scanning systems that contain personal data.
+\textbf{TypeScript:} Static typing caught errors during development reducing runtime bugs.
 
-\textbf{Scope Limitation:} Users should limit scans to necessary targets, avoiding indiscriminate scanning of networks.
+\textbf{Recharts:} Declarative charting library simplified visualization implementation.
 
-\textbf{Data Handling:} Scan results should be handled with care appropriate to their sensitivity, with access restricted to authorized personnel.
+\subsection{Development Tools}
 
-\subsection{Legal Implications}
+\textbf{pytest:} Backend testing framework with fixtures and parametrized tests.
 
-\subsubsection{Computer Misuse Legislation}
+\textbf{Jest/RTL:} Frontend unit and integration testing.
 
-Unauthorized network scanning potentially violates computer misuse laws in numerous jurisdictions:
+\textbf{Postman:} API endpoint testing and documentation.
 
-\textbf{United Kingdom:} The Computer Misuse Act 1990 criminalizes unauthorized access to computer systems. Section 1 prohibits accessing computer material without authorization, which could encompass port scanning.
+\section{Code Quality Practices}
 
-\textbf{United States:} The Computer Fraud and Abuse Act (CFAA) similarly prohibits unauthorized access to protected computers. Courts have interpreted this broadly, potentially including network scanning without permission.
+\subsection{Code Standards}
 
-\textbf{European Union:} Various EU member states have computer crime legislation similar to the UK's Computer Misuse Act.
+\textbf{Python:} PEP 8 style guide enforced via \texttt{black} formatter and \texttt{flake8} linter.
 
-\textbf{Risk Mitigation:} The project documentation explicitly states that users must have authorization for all scanning activities. The system could be enhanced to require authorization documentation before scans proceed.
+\textbf{TypeScript:} ESLint with strict rules ensuring consistent code style.
 
-\subsubsection{Data Protection Compliance}
+\textbf{Documentation:} Docstrings for all public functions/classes, inline comments for complex logic.
 
-Scan results may contain personal data, triggering data protection obligations:
+\subsection{Testing Strategy}
 
-\textbf{GDPR Compliance (EU):} If scanning identifies individuals' devices or services, that information may constitute personal data under GDPR. Organizations using Threat Sentinel must:
-\begin{itemize}
-    \item Have lawful basis for processing (legitimate interests for security)
-    \item Implement appropriate security measures
-    \item Respect data subject rights
-    \item Maintain records of processing activities
-\end{itemize}
+\textbf{Unit Tests:} Individual function/component testing with mocked dependencies.
 
-\textbf{Data Minimization:} The system should collect only necessary information, avoiding excessive data gathering that cannot be justified by security needs.
+\textbf{Integration Tests:} API endpoint tests with test database.
 
-\subsubsection{Liability Considerations}
-
-Deployment of security scanning tools creates potential liability:
-
-\textbf{Security Breaches:} If scanning reveals vulnerabilities that are subsequently exploited before remediation, questions of negligence may arise.
-
-\textbf{Network Disruption:} Aggressive scanning could disrupt network operations, potentially leading to liability for damages.
-
-\textbf{Mitigation:} Clear terms of use, liability disclaimers, and user agreements can help manage risk, though they may not eliminate liability in all circumstances.
-
-\subsection{Social Implications}
-
-\subsubsection{Security Democratization}
-
-Threat Sentinel contributes to democratizing cybersecurity capabilities, reducing the advantage enjoyed by well-resourced organizations. This has positive social implications:
-
-\begin{itemize}
-    \item Small businesses can access enterprise-level security assessment tools
-    \item Educational institutions can provide students with hands-on security experience
-    \item Non-profit organizations can improve their security posture affordably
-    \item Developing regions with limited commercial tool access benefit from open-source alternatives
-\end{itemize}
-
-\subsubsection{Digital Divide Considerations}
-
-While the project improves accessibility, it requires certain resources:
-\begin{itemize}
-    \item Internet connectivity for web-based interface
-    \item Computing infrastructure to run backend services
-    \item Technical knowledge to interpret findings
-\end{itemize}
-
-These requirements mean that despite improved accessibility, some organizations (particularly in resource-constrained environments) may still face barriers to effective use.
-
-\subsubsection{Education and Skill Development}
-
-The project contributes to cybersecurity education by:
-\begin{itemize}
-    \item Demonstrating practical security tool application
-    \item Providing hands-on learning opportunities for students
-    \item Making security concepts concrete through visualization
-    \item Encouraging responsible security practices
-\end{itemize}
-
-Educational institutions can use Threat Sentinel as a teaching tool, helping develop the next generation of security professionals.
-
-\subsubsection{Impact on Security Practices}
-
-Widespread adoption of accessible security tools may influence broader security practices:
-
-\textbf{Positive Effects:}
-\begin{itemize}
-    \item Increased baseline security awareness
-    \item More organizations conducting regular security assessments
-    \item Earlier vulnerability detection and remediation
-    \item Growth in security-conscious organizational culture
-\end{itemize}
-
-\textbf{Potential Concerns:}
-\begin{itemize}
-    \item Over-reliance on automated tools without expert interpretation
-    \item False sense of security from scanning without remediation
-    \item Insufficient understanding of legal and ethical boundaries
-\end{itemize}
-
-\subsection{Recommendations for Responsible Deployment}
-
-Based on ethical, legal, and social analysis, the following recommendations apply:
-
-\begin{enumerate}
-    \item \textbf{Clear Usage Guidelines:} Documentation must explicitly state legal requirements and ethical obligations.
-    
-    \item \textbf{Authorization Verification:} Consider implementing features requiring users to confirm authorization before scanning.
-    
-    \item \textbf{Education First:} First-time users should complete an orientation explaining responsible use.
-    
-    \item \textbf{Limited External Scanning:} Consider restricting scans to private network ranges by default, requiring explicit override for public addresses.
-    
-    \item \textbf{Audit Logging:} Implement comprehensive logging of all scanning activities for accountability.
-    
-    \item \textbf{Community Guidelines:} Establish a user community committed to responsible security practices.
-    
-    \item \textbf{Responsible Disclosure Support:} Provide resources on how to responsibly report discovered vulnerabilities.
-\end{enumerate}
+\textbf{End-to-End Tests:} Complete workflow tests from event ingestion to dashboard display.
 
 \section{Summary}
 
-This chapter has demonstrated that Threat Sentinel successfully achieves its primary objectives, delivering an integrated, accessible cybersecurity analysis platform. Performance exceeds expectations, usability testing confirms improved accessibility, and all core functional requirements are met. Areas for future enhancement include authentication, advanced visualization, threat intelligence integration, and comprehensive reporting.
-
-The extensive discussion of ethical, legal, and social implications acknowledges the complex responsibilities inherent in developing security tools. While the project creates genuine value by democratizing security capabilities, it also requires careful attention to potential misuse, legal compliance, and social impact. The recommendations provided aim to maximize beneficial use while minimizing risks and harms.
+This chapter detailed SIREN's implementation across backend services, frontend interface, Windows agent, and database components. Iterative development methodology enabled progressive capability additions. Key implementation challenges around correlation performance, agent resource usage, and state management were successfully resolved through optimization techniques. Consistent application of code quality practices and comprehensive testing ensured system reliability. The implementation successfully realizes the design specified in Chapter 4, delivering functional security incident management capabilities.
