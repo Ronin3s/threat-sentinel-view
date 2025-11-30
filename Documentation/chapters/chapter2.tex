@@ -7,44 +7,33 @@ This chapter examines existing research, tools, and commercial solutions relevan
 
 \section{Related Work}
 
-\subsection{Study 1: Automated Incident Response Using SOAR Platforms}
+\subsection{Study 1: Automated Incident Response Using SOAR }
 
 \textbf{Reference:} Zimmerman et al. (2019), "Security Orchestration, Automation and Response: A Systematic Review of SOAR Capabilities and Implementations"
 
 \subsubsection{Methodology}
 
-Zimmerman and colleagues conducted a comprehensive survey of Security Orchestration, Automation, and Response (SOAR) platforms deployed across 45 enterprise organizations. The study employed mixed methods combining quantitative analysis of incident metrics (MTTD, MTTR) with qualitative interviews of SOC analysts. Organizations were categorized by size (small, medium, large enterprise) and industry sector. The researchers collected data on alert volumes, false positive rates, analyst workload, and response effectiveness before and after SOAR implementation.
+\vspace{-1.4em}
 
-The methodology included controlled experiments where specific incident types were introduced into test environments, measuring detection time, correlation accuracy, and response automation effectiveness. Statistical analysis compared manual versus automated response workflows across various incident categories including malware infections, data exfiltration attempts, and unauthorized access events.
+Zimmerman et al. surveyed 45 enterprises to evaluate SOAR platform effectiveness, combining quantitative incident metrics (MTTD, MTTR) with qualitative analyst interviews. The study measured the impact of automation on alert volumes, false positive rates, and response times across various incident categories, comparing manual versus automated workflows in controlled test environments.
 
 \subsubsection{Similarities to SIREN}
 
-Both SIREN and the SOAR platforms examined in this study share several fundamental objectives:
-
-\begin{itemize}
-    \item \textbf{Alert Consolidation:} Both approaches integrate security alerts from multiple sources (SIEM, IDS/IPS, endpoint protection) into unified platforms, addressing the challenge of fragmented security data.
-    
-    \item \textbf{Automated Correlation:} The SOAR platforms and SIREN employ rule-based correlation engines to identify patterns across disparate security events, reducing manual analysis burden.
-    
-    \item \textbf{Workflow Automation:} Both solutions automate repetitive incident response tasks, enabling analysts to focus on complex investigations requiring human expertise.
-    
-    \item \textbf{Centralized Management:} The architectures provide single-pane-of-glass interfaces for monitoring security posture and managing incident response activities.
+\vspace{-1.4em}
+SIREN shares core objectives with SOAR platforms:
+\begin{itemize}[itemsep=0.1em, parsep=0pt]
+	\item \textbf{Alert Consolidation:} Integrates alerts for pattern detection.
+	\item \textbf{Workflow Automation:} Reduces analyst workload.
+	\item \textbf{Centralized Management:} Provides a unified monitoring interface.
 \end{itemize}
 
 \subsubsection{Differences from SIREN}
 
-Despite similarities in objectives, SIREN differs from enterprise SOAR platforms in several important aspects:
-
-\begin{itemize}
-    \item \textbf{Target Market:} SOAR platforms target large enterprise environments with dedicated security teams, while SIREN specifically addresses SME requirements with limited security resources.
-    
-    \item \textbf{Complexity:} Enterprise SOAR solutions require extensive configuration, custom playbook development, and specialized training. SIREN emphasizes simplicity with pre-configured correlation rules and intuitive interfaces.
-    
-    \item \textbf{Cost Structure:} Commercial SOAR platforms involve substantial licensing costs (typically \$50,000-\$500,000+ annually), whereas SIREN is designed as an accessible open-source solution.
-    
-    \item \textbf{Integration Scope:} SOAR platforms integrate with dozens of enterprise security tools through extensive API ecosystems. SIREN focuses on core event sources (Windows Event Logs, Sysmon) providing essential capabilities without overwhelming complexity.
-    
-    \item \textbf{Deployment Model:} SOAR solutions often require dedicated infrastructure and professional services for deployment. SIREN is designed for straightforward self-deployment with minimal prerequisites.
+Key distinctions include:
+\begin{itemize}[itemsep=0.2em, parsep=0pt]
+	\item \textbf{Target \& Complexity:} SOAR targets enterprises with complex, expensive solutions requiring specialized training. SIREN targets SMEs with a simple, pre-configured, and intuitive approach.
+	\item \textbf{Cost \& Access:} SOAR platforms have high licensing costs (\$50k+), whereas SIREN is a \textbf{free, open-source solution.}
+	\item \textbf{Scope:} SOAR integrates with vast enterprise ecosystems; \\SIREN focuses on essential Windows event sources for straightforward,\\ lightweight deployment.
 \end{itemize}
 
 \subsection{Study 2: Machine Learning for Security Incident Detection}
@@ -53,38 +42,31 @@ Despite similarities in objectives, SIREN differs from enterprise SOAR platforms
 
 \subsubsection{Methodology}
 
-Chen and team developed and evaluated deep learning models for automated security incident detection within SIEM environments. The research utilized three months of security event data from a university network comprising approximately 10,000 hosts generating 50 million events daily. Researchers labeled a subset of 100,000 events (incidents vs. benign activity) through expert analysis to create training and validation datasets.
-
-The methodology compared multiple machine learning architectures including Recurrent Neural Networks (RNN), Long Short-Term Memory (LSTM) networks, and Convolutional Neural Networks (CNN) adapted for time-series event data. Performance metrics included detection accuracy, false positive rate, false negative rate, and processing latency. The study employed k-fold cross-validation to ensure model generalizability and tested against both historical data and live network traffic.
+\vspace{-1.5em}
+Chen et al. evaluated deep learning models (RNN, LSTM, CNN) for incident detection using 3 months of data (50M daily events) from a university network. They labeled 100k events for training and measured accuracy, false positives, and latency using k-fold cross-validation against both historical and live traffic.
 
 \subsubsection{Similarities to SIREN}
 
-The machine learning research and SIREN share common goals in security event analysis:
+\vspace{-1.5em}
+Common goals include:
 
-\begin{itemize}
-    \item \textbf{Pattern Recognition:} Both approaches aim to identify complex patterns within security event streams that indicate genuine security incidents.
-    
-    \item \textbf{Automation Objective:} The fundamental goal of reducing manual analysis through automated detection aligns with SIREN's correlation engine objectives.
-    
-    \item \textbf{False Positive Reduction:} Both solutions address the critical challenge of distinguishing genuine threats from benign anomalies and false alarms.
-    
-    \item \textbf{Scale Handling:} The approaches must process large volumes of security events efficiently without introducing unacceptable latency.
+\vspace{-1.5em}
+\begin{itemize}[itemsep=0.1em, parsep=0pt]
+	\item \textbf{Pattern Recognition:} Identifying complex threat patterns in event streams.
+	\item \textbf{Automation:} Reducing manual analysis through automated detection.
+	\item \textbf{Scale \& Accuracy:} Processing high volumes efficiently while minimizing false positives.
 \end{itemize}
 
 \subsubsection{Differences from SIREN}
 
-SIREN employs a fundamentally different technical approach compared to machine learning-based detection:
+\vspace{-1.5em}
+Key distinctions include:
 
-\begin{itemize}
-    \item \textbf{Detection Method:} The machine learning study relies on supervised learning models requiring extensive labeled training data. SIREN uses rule-based correlation that does not require training or labeled datasets.
-    
-    \item \textbf{Explainability:} Deep learning models function as "black boxes" where detection reasoning is opaque. SIREN's rule-based approach provides explicit explanation of why events were correlated into incidents, crucial for analyst understanding and compliance.
-    
-    \item \textbf{Resource Requirements:} Machine learning models demand significant computational resources for training and inference, particularly deep neural networks. SIREN's rule evaluation is computationally lightweight, suitable for resource-constrained SME environments.
-    
-    \item \textbf{Adaptability:} ML models require retraining for new threat types and environmental changes. SIREN's correlation rules can be updated or created through simple configuration without system retraining.
-    
-    \item \textbf{Cold Start Problem:} ML approaches require substantial initial data collection and labeling before becoming operational. SIREN operates immediately upon deployment with pre-configured rules.
+\vspace{-1.5em}
+\begin{itemize}[itemsep=0.1em, parsep=0pt]
+	\item \textbf{Detection Approach:} ML relies on opaque "black box" models requiring extensive labeled training data. SIREN uses transparent, rule-based correlation without training requirements.
+	\item \textbf{Resources:} ML demands heavy computation; SIREN is lightweight and suitable for SMEs.
+	\item \textbf{Adaptability:} ML requires retraining for new threats; SIREN allows instant rule updates.
 \end{itemize}
 
 \subsection{Study 3: Open-Source SIEM Platform Architecture}
@@ -93,203 +75,94 @@ SIREN employs a fundamentally different technical approach compared to machine l
 
 \subsubsection{Methodology}
 
-Patel and Kumar documented the design, implementation, and performance evaluation of an open-source SIEM platform built on the ELK stack (Elasticsearch, Logstash, Kibana). The research followed an action research methodology where the platform was iteratively developed and refined based on deployment feedback from three pilot organizations (university, healthcare provider, financial services firm).
-
-The methodology included architectural design decisions, database schema optimization for security event storage, query performance benchmarking, and scalability testing. Researchers measured system performance under varying event ingestion rates (1,000 to 100,000 events per second), storage requirements across different retention periods, and dashboard responsiveness with large historical datasets. User experience was evaluated through structured interviews with SOC analysts using the platform.
+\vspace{-1.5em}
+Patel and Kumar developed an open-source SIEM using the ELK stack, refining it through action research with three pilot organizations. They evaluated performance (ingestion rates up to 100k EPS), storage optimization, and user experience through analyst interviews.
 
 \subsubsection{Similarities to SIREN}
 
-The open-source SIEM platform and SIREN share architectural and philosophical similarities:
+\vspace{-1.5em}
+Shared architectural philosophies include:
 
-\begin{itemize}
-    \item \textbf{Open-Source Philosophy:} Both projects aim to provide security capabilities without commercial licensing costs, addressing barriers faced by organizations with limited budgets.
-    
-    \item \textbf{Web-Based Interface:} Both solutions employ modern web technologies to deliver accessible, intuitive interfaces for security monitoring and investigation.
-    
-    \item \textbf{Event Centralization:} The architectures centralize security event collection from distributed sources into unified databases enabling comprehensive analysis.
-    
-    \item \textbf{Customization Focus:} Both platforms emphasize flexibility, allowing organizations to adapt the system to their specific security requirements and event sources.
-    
-    \item \textbf{Time-Series Optimization:} Database designs in both systems optimize for time-series security event data with efficient indexing and query performance for temporal analysis.
+\vspace{-1.5em}
+\begin{itemize}[itemsep=0.1em, parsep=0pt]
+	\item \textbf{Open-Source & Web-Based:} Both offer accessible, cost-free solutions with modern web interfaces.
+	\item \textbf{Centralization:} Both consolidate events from distributed sources for unified analysis.
+	\item \textbf{Flexibility:} Both emphasize customization and time-series data optimization.
 \end{itemize}
 
 \subsubsection{Differences from SIREN}
 
-SIREN diverges from the SIEM platform architecture in several significant ways:
+\vspace{-1.5em}
+Key distinctions include:
 
-\begin{itemize}
-    \item \textbf{Scope Definition:} The SIEM platform focuses broadly on event collection, storage, and search across all log types. SIREN narrows scope specifically to security incident correlation and response workflow, providing deeper capabilities in this focused domain.
-    
-    \item \textbf{Correlation Engine:} While the SIEM platform offers general query capabilities, SIREN implements purpose-built correlation algorithms specifically designed for incident detection patterns.
-    
-    \item \textbf{Response Integration:} SIREN integrates incident response workflows, notification management, and investigation tools as core capabilities. The SIEM platform primarily provides search and visualization, requiring external tools for response coordination.
-    
-    \item \textbf{Agent Design:} The SIEM platform relies on Logstash or Beats for event forwarding, which are general-purpose tools. SIREN develops a purpose-built Python agent optimized specifically for security event collection with minimal resource footprint.
-    
-    \item \textbf{User Workflow:} The SIEM platform requires analysts to construct queries and searches to investigate events. SIREN presents pre-correlated incidents with guided investigation workflows, reducing cognitive load.
+\vspace{-1.5em}
+\begin{itemize}[itemsep=0.1em, parsep=0pt]
+	\item \textbf{Scope:} SIEM is broad (log search); SIREN is focused (incident correlation & response).
+	\item \textbf{Response:} SIREN integrates response workflows; SIEM relies on external tools.
+	\item \textbf{Agent:} SIREN uses a specialized lightweight agent; SIEM uses general-purpose forwarders.
 \end{itemize}
 
 \section{Comparison Table}
 
-Table \ref{tab:comparison} provides a structured comparison of the three reviewed studies across key dimensions relevant to SIREN's objectives.
-
 \begin{table}[H]
-\centering
-\caption{Comparison of Related Research and SIREN}
-\label{tab:comparison}
-\small
-\begin{tabularx}{\textwidth}{|l|X|X|X|X|}
-\hline
-\textbf{Dimension} & \textbf{SOAR Platforms} & \textbf{ML Detection} & \textbf{Open-Source SIEM} & \textbf{SIREN} \\
-\hline
-Target Users & Large Enterprise & Research/Large Org & Flexible & SME/MSSP \\
-\hline
-Detection Method & Rule-based + Playbooks & Deep Learning & Query-based & Rule-based Correlation \\
-\hline
-Complexity & High & Very High & Moderate & Low \\
-\hline
-Cost & \$50K-\$500K+ & Development Cost & Free (Infrastructure) & Free \\
-\hline
-Training Required & Extensive & Model Training Needed & Moderate & Minimal \\
-\hline
-Deployment Time & Weeks-Months & Months & Days-Weeks & Days \\
-\hline
-Explainability & High & Low & High & High \\
-\hline
-Response Integration & Extensive & None & Limited & Integrated \\
-\hline
-Resource Requirements & Heavy & Very Heavy & Heavy & Moderate \\
-\hline
-Customization & Complex & Model Retraining & Query DSL & Configuration Rules \\
-\hline
-\end{tabularx}
+	\centering
+	\caption{Comparison of Related Research and SIREN}
+	\label{tab:comparison}
+	\small
+	\begin{tabularx}{\textwidth}{|l|X|X|X|X|}
+		\hline
+		\textbf{Dimension}    & \textbf{SOAR Platforms} & \textbf{ML Detection} & \textbf{Open-Source SIEM} & \textbf{SIREN}         \\
+		\hline
+		Target Users          & Large Enterprise        & Research/Large Org    & Flexible                  & SME/MSSP               \\
+		\hline
+		Detection Method      & Rule-based + Playbooks  & Deep Learning         & Query-based               & Rule-based Correlation \\
+		\hline
+		Complexity            & High                    & Very High             & Moderate                  & Low                    \\
+		\hline
+		Cost                  & \$50K-\$500K+           & Development Cost      & Free (Infrastructure)     & Free                   \\
+		\hline
+		Training Required     & Extensive               & Model Training Needed & Moderate                  & Minimal                \\
+		\hline
+		Deployment Time       & Weeks-Months            & Months                & Days-Weeks                & Days                   \\
+		\hline
+		Explainability        & High                    & Low                   & High                      & High                   \\
+		\hline
+		Response Integration  & Extensive               & None                  & Limited                   & Integrated             \\
+		\hline
+		Resource Requirements & Heavy                   & Very Heavy            & Heavy                     & Moderate               \\
+		\hline
+		Customization         & Complex                 & Model Retraining      & Query DSL                 & Configuration Rules    \\
+		\hline
+	\end{tabularx}
 \end{table}
-
-The comparison reveals that existing solutions occupy different niches: SOAR platforms provide comprehensive capabilities but at high cost and complexity; machine learning approaches offer advanced detection but sacrifice explainability and require substantial resources; open-source SIEM platforms provide flexibility but focus on search rather than incident management. SIREN addresses an under-served market segment by providing incident-focused capabilities with low complexity and cost barriers while maintaining explainability.
-
-\section{Figure Placeholders}
 
 \begin{figure}[H]
-\centering
-\begin{verbatim}
-+------------------+     +------------------+     +------------------+
-|                  |     |                  |     |                  |
-|  Enterprise SOAR |     |   ML-Based SIEM  |     |  Open-Source     |
-|   Platforms      |     |   Detection      |     |  SIEM (ELK)      |
-|                  |     |                  |     |                  |
-+--------+---------+     +--------+---------+     +--------+---------+
-         |                        |                        |
-         |  High Cost             |  Complexity            |  Generic
-         |  High Complexity       |  Training Data         |  Focus
-         |  Enterprise Focus      |  Resource Heavy        |  Limited Response
-         |                        |                        |
-         +------------------------+------------------------+
-                                  |
-                                  v
-                     +---------------------------+
-                     |                           |
-                     |   SIREN: Fills the Gap    |
-                     |   - SME Focus             |
-                     |   - Low Complexity        |
-                     |   - Incident-Centric      |
-                     |   - Integrated Response   |
-                     |                           |
-                     +---------------------------+
-\end{verbatim}
-\caption{Gap Analysis: How SIREN Addresses Under-Served Market Segment}
-\label{fig:gap_analysis}
+	\centering
+	\includegraphics[width=1.1\textwidth, height=25cm, keepaspectratio]{comper.png}
+	\caption{Comparison Visualization}
+	\label{fig:comparison_visual}
 \end{figure}
 
-This gap analysis (Figure \ref{fig:gap_analysis}) illustrates that while existing solutions address various aspects of security monitoring and incident management, they each have limitations that prevent adoption by SME organizations. SIREN specifically targets this under-served segment by balancing capability, complexity, and cost.
+% \begin{figure}[H]
+% 	\centering
+% 	\includegraphics[width=1.2\textwidth]{comper.png}
+% 	\caption{Comparison Visualization}
+% 	\label{fig:comparison_visual}
+% \end{figure}
 
-\section{Summary}
 
-This chapter reviewed three significant research directions in security incident management: enterprise SOAR platforms, machine learning-based detection, and open-source SIEM architectures. While these approaches demonstrate the importance of automation and integration in security operations, each has limitations that hinder adoption by organizations with limited resources or specialized needs.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{sec-gap-analsiys.png}
+	\caption{Gap Analysis: How SIREN Addresses Under-Served Market Segment}
+	\label{fig:gap_analysis}
+\end{figure}
 
-SIREN learns from these existing approaches while addressing identified gaps. From SOAR platforms, SIREN adopts the concept of workflow automation and centralized management while simplifying deployment and eliminating cost barriers. From machine learning research, SIREN recognizes the value of automated pattern detection while choosing explainable rule-based correlation appropriate for resource-constrained environments. From open-source SIEM platforms, SIREN embraces the philosophy of accessible security tools while narrowing focus to incident management rather than general-purpose log analysis.
+Figure \ref{fig:gap_analysis} illustrates that existing solutions—enterprise SOAR platforms, ML-based detection systems, and open-source SIEM platforms—each have limitations preventing SME adoption. SIREN fills this gap by balancing capability, simplicity, and cost-effectiveness.
 
-The comparative analysis establishes that SIREN occupies a unique position in the security tool landscape: providing incident-focused capabilities with the simplicity and cost-effectiveness required by SME organizations, while maintaining the explainability and workflow integration necessary for effective security operations.
-
-This chapter presents a critical review of existing literature and solutions related to cybersecurity threat analysis, network security scanning, and vulnerability assessment platforms. The review synthesizes research from academic publications, industry reports, and analysis of commercial and open-source security tools. Rather than simply cataloging existing work, this review identifies key themes, compares different approaches, and articulates how this project builds upon and extends current knowledge in the field.
-
-\section{Network Security Scanning and Vulnerability Assessment}
-
-Network security scanning has been a fundamental component of cybersecurity practice since the early days of networked computing. Lyon (2009) introduced Nmap as the de facto standard for network discovery and security auditing, demonstrating how active scanning techniques can effectively map network topologies and identify potential security weaknesses. The tool's flexibility and comprehensive feature set have made it indispensable for security professionals, yet its command-line interface and complex output formats present accessibility challenges for less experienced users.
-
-Building upon basic port scanning concepts, researchers have explored various approaches to accelerating network reconnaissance. Graham (2013) developed Masscan, which achieves significantly higher scanning speeds through asynchronous packet transmission. This work demonstrated that performance optimization in security scanning is achievable without sacrificing accuracy, though increased speed introduces new challenges in result management and interpretation.
-
-In the web application security domain, Nikto has emerged as a prominent vulnerability scanner specifically designed for identifying common web server misconfigurations and vulnerabilities \citep{sullo2001nikto}. While effective at detecting known issues, Nikto and similar tools primarily focus on signature-based detection, which may miss novel vulnerabilities or complex attack vectors requiring manual analysis.
-
-\section{Security Visualization and Dashboard Systems}
-
-The challenge of presenting complex security data in comprehensible formats has received considerable attention in recent literature. Goodall et al. (2005) emphasized the importance of visualization in security operations, arguing that effective visual representations can significantly reduce the time required to identify threats and understand attack patterns. Their work established foundational principles for security visualization, including the need for multiple coordinated views, interactive exploration capabilities, and context preservation.
-
-Commercial Security Information and Event Management (SIEM) platforms such as Splunk and ELK Stack have demonstrated the value of aggregating security data from multiple sources into unified dashboards. However, these enterprise solutions often require substantial resource investment and expertise to deploy and maintain effectively. Smaller organizations frequently find themselves unable to justify the costs or lacking the technical capabilities to extract full value from such complex systems.
-
-More recent work by Vaarandi and Pihelgas (2015) on open-source log management and SIEM solutions has shown that accessible security monitoring can be achieved through careful system design and appropriate technology selection. Their research suggests that web-based interfaces built on modern frameworks can provide enterprise-level capabilities while maintaining lower barriers to entry.
-
-\section{Integrated Security Platforms}
-
-Several projects have attempted to create integrated security testing platforms that combine multiple tools under unified interfaces. The Metasploit Framework \citep{kennedy2011metasploit} represents one of the most comprehensive efforts in this direction, providing a modular architecture for penetration testing and exploitation. While powerful, Metasploit primarily focuses on active exploitation rather than initial reconnaissance and vulnerability assessment, occupying a different niche than the present project.
-
-OpenVAS, an open-source vulnerability assessment system, offers comprehensive scanning capabilities through a centralized management interface \citep{openvas2019}. However, users frequently report challenges with deployment complexity and resource requirements. The system's reliance on extensive vulnerability databases also introduces maintenance overhead that may be prohibitive for smaller deployments.
-
-Faraday IDE presents an interesting approach to security tool integration by providing a collaborative penetration testing environment that aggregates outputs from multiple security tools \citep{infobyte2019faraday}. This project demonstrates the value of centralized data management but focuses primarily on penetration testing workflows rather than continuous security monitoring.
-
-\section{Web Technologies for Security Applications}
-
-The application of modern web technologies to security tooling represents a relatively recent trend in the literature. Traditional security tools predominantly use command-line interfaces, reflecting their Unix heritage and the preferences of their primary user base. However, the maturation of web frameworks has enabled new possibilities for security tool accessibility.
-
-React and similar component-based frameworks have been successfully applied to building complex, interactive security interfaces. Ferguson et al. (2018) demonstrated that modern JavaScript frameworks can handle the real-time data requirements of security monitoring systems while providing superior user experiences compared to traditional approaches.
-
-On the backend, the emergence of high-performance Python web frameworks like FastAPI has enabled rapid development of APIs for security tool orchestration. The asynchronous capabilities of these frameworks are particularly well-suited to managing long-running security scans and processing their results in real-time.
-
-\section{Comparative Analysis}
-
-Table \ref{tab:comparison} provides a structured comparison of major related works and how they address key requirements for integrated security analysis platforms.
-
-% [TABLE PLACEHOLDER: Comparison of Related Works]
-\begin{table}[H]
-\centering
-\caption{Comparison of Related Security Platforms}
-\label{tab:comparison}
-\begin{tabularx}{\textwidth}{|l|X|X|X|X|}
-\hline
-\textbf{Platform} & \textbf{Integration} & \textbf{Visualization} & \textbf{Accessibility} & \textbf{Real-time} \\
-\hline
-Nmap & Single tool & Command-line only & CLI, high learning curve & Limited \\
-\hline
-OpenVAS & Multiple scanners & Basic web UI & Moderate, complex setup & Yes \\
-\hline
-Metasploit & Extensive modules & Limited visualization & CLI-focused, complex & Partial \\
-\hline
-Faraday IDE & Good integration & Moderate & Desktop app required & Yes \\
-\hline
-Commercial SIEM & Excellent & Excellent & High cost barrier & Excellent \\
-\hline
-\textbf{Threat Sentinel} & Multiple tools & Modern interactive & Web-based, intuitive & Yes \\
-\hline
-\end{tabularx}
-\end{table}
-
-\section{Identified Gaps and Project Justification}
-
-Analysis of existing literature and solutions reveals several significant gaps that this project addresses:
-
-\begin{enumerate}
-    \item \textbf{Integration Gap:} While individual security tools are highly capable, few solutions effectively integrate multiple tools with a truly unified interface accessible through standard web browsers.
-    
-    \item \textbf{Accessibility Gap:} Powerful security tools remain predominantly command-line based, limiting their accessibility to users comfortable with terminal interfaces and complex syntax.
-    
-    \item \textbf{Visualization Gap:} Existing open-source solutions provide limited interactive visualization capabilities compared to expensive commercial alternatives.
-    
-    \item \textbf{Modern Technology Gap:} Security tools have been slow to adopt modern web technologies that could significantly enhance user experience and accessibility.
-    
-    \item \textbf{Lightweight Integration Gap:} Most integrated platforms are either too simplistic or excessively complex for mid-sized organizations seeking comprehensive yet manageable security solutions.
-\end{enumerate}
-
-\section{Summary}
-
-This literature review has established that while significant work exists in network security scanning, vulnerability assessment, and security visualization, there remains a clear opportunity for integrated platforms that combine the power of industry-standard security tools with modern, accessible web interfaces. The gaps identified in existing solutions directly inform the design and implementation of Threat Sentinel, which seeks to provide enterprise-level security analysis capabilities through an intuitive, web-based platform accessible to organizations of varying sizes and technical capabilities.
-
-The following chapter details how these insights inform the specific requirements and design decisions for the proposed system.
+% \section{Summary}
+%
+% This chapter reviewed existing approaches to security incident management, including enterprise SOAR platforms, machine learning-based detection, and open-source SIEM architectures. While these solutions demonstrate the value of automation and integration, they present barriers to adoption by resource-constrained organizations through high costs, complexity, or limited functionality.
+%
+% SIREN addresses these gaps by combining workflow automation from SOAR platforms, explainable rule-based correlation instead of resource-intensive machine learning, and the accessibility principles of open-source tools—while maintaining tight focus on incident management and response. This positions SIREN uniquely for SME organizations requiring effective security operations without enterprise-level complexity or costs.
+%
