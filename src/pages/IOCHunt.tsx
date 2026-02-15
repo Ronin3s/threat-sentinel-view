@@ -15,13 +15,13 @@ import {
   Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
-import sirenApi, { IOCHunt } from '@/lib/api';
+import sirenApi, { type IOCHunt as IOCHuntType } from '@/lib/api';
 
-export default function IOCHunt() {
+export default function IOCHuntPage() {
   const [iocType, setIocType] = useState('file_hash');
   const [iocValue, setIocValue] = useState('');
   const [hunting, setHunting] = useState(false);
-  const [huntResult, setHuntResult] = useState<IOCHunt | null>(null);
+  const [huntResult, setHuntResult] = useState<IOCHuntType | null>(null);
   const [huntId, setHuntId] = useState<string | null>(null);
 
   const startHunt = async () => {
@@ -38,7 +38,7 @@ export default function IOCHunt() {
       const result = await sirenApi.ioc.startHunt(iocType, iocValue);
 
       if (result.status === 'error') {
-        toast.error(result.message || 'Invalid IOC format');
+        toast.error('Invalid IOC format');
         setHunting(false);
         return;
       }
